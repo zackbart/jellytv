@@ -194,9 +194,10 @@ public actor JellyfinClient: JellyfinClientAPI {
     }
 
     private func sendIgnoringResponse(_ request: URLRequest) async throws {
+        let data: Data
         let response: URLResponse
         do {
-            (_, response) = try await session.data(for: request)
+            (data, response) = try await session.data(for: request)
         } catch let urlError as URLError {
             throw JellyfinError.network(urlError)
         } catch {
@@ -213,7 +214,7 @@ public actor JellyfinClient: JellyfinClientAPI {
         case 401:
             throw JellyfinError.unauthenticated
         default:
-            let problem = try? decoder.decode(ProblemDetails.self, from: response as? HTTPURLResponse == nil ? Data() : Data())
+            let problem = try? decoder.decode(ProblemDetails.self, from: data)
             throw JellyfinError.http(status: http.statusCode, problem: problem)
         }
     }
