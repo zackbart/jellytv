@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Settings",
-    platforms: [.tvOS(.v26)],
+    platforms: [.tvOS(.v26), .macOS(.v14)],
     products: [
         .library(name: "Settings", targets: ["Settings"]),
     ],
@@ -20,6 +20,10 @@ let package = Package(
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "DesignSystem", package: "DesignSystem"),
             ]
+        ),
+        .testTarget(
+            name: "SettingsTests",
+            dependencies: ["Settings"]
         ),
     ]
 )
