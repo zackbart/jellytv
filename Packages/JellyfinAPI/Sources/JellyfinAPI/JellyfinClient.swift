@@ -156,6 +156,46 @@ public actor JellyfinClient: JellyfinClientAPI {
         return try await send(request, as: [BaseItemDto].self)
     }
 
+    // MARK: - Live TV
+
+    public func liveTvChannels() async throws -> [LiveTvChannel] {
+        let queryItems = [
+            URLQueryItem(name: "enableImages", value: "true"),
+            URLQueryItem(name: "enableImageTypes", value: "Primary"),
+            URLQueryItem(name: "sortBy", value: "SortName"),
+            URLQueryItem(name: "sortOrder", value: "Ascending"),
+        ]
+        let request = try buildRequest(path: "/LiveTv/Channels", queryItems: queryItems)
+        let result = try await send(request, as: LiveTvChannelQueryResult.self)
+        return result.items
+    }
+
+    public func liveTvPrograms(
+        channelIds: [String],
+        minStartDate: Date,
+        maxStartDate: Date
+    ) async throws -> [LiveTvProgram] {
+        if channelIds.isEmpty {
+            return []
+        }
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        var queryItems: [URLQueryItem] = channelIds.map {
+            URLQueryItem(name: "channelIds", value: $0)
+        }
+        queryItems.append(URLQueryItem(name: "minStartDate", value: isoFormatter.string(from: minStartDate)))
+        queryItems.append(URLQueryItem(name: "maxStartDate", value: isoFormatter.string(from: maxStartDate)))
+        queryItems.append(URLQueryItem(name: "sortBy", value: "StartDate"))
+        queryItems.append(URLQueryItem(name: "sortOrder", value: "Ascending"))
+        queryItems.append(URLQueryItem(name: "enableImages", value: "false"))
+        queryItems.append(URLQueryItem(name: "enableTotalRecordCount", value: "false"))
+        queryItems.append(URLQueryItem(name: "fields", value: "Overview"))
+        queryItems.append(URLQueryItem(name: "limit", value: "2000"))
+        let request = try buildRequest(path: "/LiveTv/Programs", queryItems: queryItems)
+        let result = try await send(request, as: LiveTvProgramQueryResult.self)
+        return result.items
+    }
+
     // MARK: - Private: Authorization header
 
     private func authorizationHeaderValue() -> String {

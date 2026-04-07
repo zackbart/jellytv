@@ -36,4 +36,19 @@ public protocol JellyfinClientAPI: Sendable {
 
     /// GET /Items/Latest?parentId=...&limit=... — Latest items per library
     func latestItems(parentId: String?, limit: Int) async throws -> [BaseItemDto]
+
+    // MARK: - Live TV
+
+    /// GET /LiveTv/Channels — list of TV channels.
+    func liveTvChannels() async throws -> [LiveTvChannel]
+
+    /// GET /LiveTv/Programs — EPG entries for the given channels in the time window.
+    /// `minStartDate` and `maxStartDate` filter on each program's start time.
+    /// To capture programs already in progress at the window start, callers should
+    /// pass a `minStartDate` somewhat earlier than the visible window start.
+    func liveTvPrograms(
+        channelIds: [String],
+        minStartDate: Date,
+        maxStartDate: Date
+    ) async throws -> [LiveTvProgram]
 }

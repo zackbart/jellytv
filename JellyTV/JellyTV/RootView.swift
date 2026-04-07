@@ -9,8 +9,7 @@
 import SwiftUI
 import JellyfinAPI
 import Settings
-import Library
-import DesignSystem
+import LiveTV
 
 struct RootView: View {
     @Bindable var sessionStore: SessionStore
@@ -56,14 +55,13 @@ private struct SignInFlowView: View {
     }
 }
 
-/// Phase 1 placeholder for the eventual Home view. Just shows the signed-in
-/// user and a Sign Out button.
+/// Post sign-in: shows the Live TV guide.
 private struct SignedInRootView: View {
     let user: UserDto
     let sessionStore: SessionStore
 
     var body: some View {
-        HomeView(model: HomeModel(client: sessionStore.client))
+        GuideView(model: GuideModel(client: sessionStore.client))
     }
 }
 

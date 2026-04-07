@@ -98,4 +98,14 @@ final class MockJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
     func latestItems(parentId: String?, limit: Int) async throws -> [BaseItemDto] {
         try latestItemsResult.get()
     }
+
+    // MARK: - Live TV
+
+    func liveTvChannels() async throws -> [LiveTvChannel] { [] }
+
+    func liveTvPrograms(
+        channelIds: [String],
+        minStartDate: Date,
+        maxStartDate: Date
+    ) async throws -> [LiveTvProgram] { [] }
 }

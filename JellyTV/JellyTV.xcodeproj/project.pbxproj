@@ -13,6 +13,7 @@
 		D8321ABC2F8554460046BB1A /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = D8321ABB2F8554460046BB1A /* Persistence */; };
 		D8321ABF2F8554530046BB1A /* Player in Frameworks */ = {isa = PBXBuildFile; productRef = D8321ABE2F8554530046BB1A /* Player */; };
 		D8321AC22F85545F0046BB1A /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = D8321AC12F85545F0046BB1A /* Settings */; };
+		D8CC7A6B2F857D9300B0060A /* LiveTV in Frameworks */ = {isa = PBXBuildFile; productRef = D8CC7A6A2F857D9300B0060A /* LiveTV */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 				D8321AB92F8554390046BB1A /* Library in Frameworks */,
 				D8321AC22F85545F0046BB1A /* Settings in Frameworks */,
 				D8321AB32F8554190046BB1A /* JellyfinAPI in Frameworks */,
+				D8CC7A6B2F857D9300B0060A /* LiveTV in Frameworks */,
 				D8321AB62F85542C0046BB1A /* DesignSystem in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -86,6 +88,7 @@
 				D8321ABB2F8554460046BB1A /* Persistence */,
 				D8321ABE2F8554530046BB1A /* Player */,
 				D8321AC12F85545F0046BB1A /* Settings */,
+				D8CC7A6A2F857D9300B0060A /* LiveTV */,
 			);
 			productName = JellyTV;
 			productReference = D8EF31792F8478A60082D493 /* JellyTV.app */;
@@ -122,6 +125,7 @@
 				D8321ABA2F8554460046BB1A /* XCLocalSwiftPackageReference "../Packages/Persistence" */,
 				D8321ABD2F8554530046BB1A /* XCLocalSwiftPackageReference "../Packages/Player" */,
 				D8321AC02F85545F0046BB1A /* XCLocalSwiftPackageReference "../Packages/Settings" */,
+				D8CC7A692F857D9300B0060A /* XCLocalSwiftPackageReference "../Packages/LiveTV" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D8EF317A2F8478A60082D493 /* Products */;
@@ -385,6 +389,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../Packages/Settings;
 		};
+		D8CC7A692F857D9300B0060A /* XCLocalSwiftPackageReference "../Packages/LiveTV" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/LiveTV;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -411,6 +419,10 @@
 		D8321AC12F85545F0046BB1A /* Settings */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Settings;
+		};
+		D8CC7A6A2F857D9300B0060A /* LiveTV */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LiveTV;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -159,4 +159,12 @@ private final class TestScrollRegressionClient: JellyfinClientAPI, @unchecked Se
     func latestItems(parentId: String?, limit: Int) async throws -> [BaseItemDto] {
         try latestItemsResult.get()
     }
+
+    func liveTvChannels() async throws -> [LiveTvChannel] { [] }
+
+    func liveTvPrograms(
+        channelIds: [String],
+        minStartDate: Date,
+        maxStartDate: Date
+    ) async throws -> [LiveTvProgram] { [] }
 }
