@@ -9,5 +9,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "Persistence"),
+        .testTarget(name: "PersistenceTests", dependencies: ["Persistence"]),
     ]
 )
