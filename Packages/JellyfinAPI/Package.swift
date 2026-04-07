@@ -9,5 +9,6 @@ let package = Package(
     ],
     targets: [
         .target(name: "JellyfinAPI"),
+        .testTarget(name: "JellyfinAPITests", dependencies: ["JellyfinAPI"]),
     ]
 )
