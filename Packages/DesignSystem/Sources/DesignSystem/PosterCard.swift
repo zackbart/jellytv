@@ -8,6 +8,9 @@ public struct PosterCard<Item: Identifiable & Sendable>: View {
     let title: String
     let imageURL: URL?
     public let action: () -> Void
+    private var focusedValue: ((Item) -> BaseItemDto?)?
+
+    @FocusState private var isFocused: Bool
 
     public init(
         item: Item,
@@ -21,9 +24,15 @@ public struct PosterCard<Item: Identifiable & Sendable>: View {
         self.action = action
     }
 
+    public func focusedValue(_ provider: @escaping (Item) -> BaseItemDto?) -> Self {
+        var copy = self
+        copy.focusedValue = provider
+        return copy
+    }
+
     public var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: action) {
                 Group {
                     if let url = imageURL {
                         LazyImage(url: url) { state in
@@ -31,35 +40,36 @@ public struct PosterCard<Item: Identifiable & Sendable>: View {
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
-                            } else if state.error != nil {
-                                placeholderView
                             } else {
                                 placeholderView
                             }
                         }
-                        .aspectRatio(2/3, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     } else {
                         placeholderView
-                            .aspectRatio(2/3, contentMode: .fit)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                 }
-                .containerRelativeFrame(.horizontal, count: 6, spacing: 0)
-                .opacity(0.9)
-
-                Text(title)
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .foregroundStyle(.primary)
+                .aspectRatio(2/3, contentMode: .fit)
+                .frame(width: 240)
             }
+            #if os(tvOS)
+            .buttonStyle(.card)
+            #else
+            .buttonStyle(.plain)
+            #endif
+            .focused($isFocused)
+            .focusedValue(\.focusedHomeItem, isFocused ? focusedValue?(item) : nil)
+
+            Text(title)
+                .font(.subheadline)
+                .lineLimit(1)
+                .foregroundStyle(isFocused ? .primary : .secondary)
+                .frame(width: 240, alignment: .leading)
         }
-        .buttonStyle(.borderless)
     }
 
     private var placeholderView: some View {
         Rectangle()
-            .fill(.ultraThinMaterial)
+            .fill(Color.secondary.opacity(0.2))
             .overlay {
                 Image(systemName: "film")
                     .font(.largeTitle)

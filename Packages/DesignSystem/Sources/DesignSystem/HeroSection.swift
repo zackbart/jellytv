@@ -36,6 +36,7 @@ public struct HeroSection: View {
                     }
                 }
                 .aspectRatio(16/9, contentMode: .fill)
+                .animation(.easeInOut(duration: 0.35), value: backdropURL)
             } else {
                 Color.gray.opacity(0.3)
                     .aspectRatio(16/9, contentMode: .fill)

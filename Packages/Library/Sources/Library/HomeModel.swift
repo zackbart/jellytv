@@ -35,11 +35,17 @@ public final class HomeModel {
             let (librariesResult, resumeResult, nextUpResult) = try await (libraries, resumeItems, nextUpItems)
 
             var latestPerLibrary: [String: [BaseItemDto]] = [:]
-            for library in librariesResult where library.type == "Folder" || library.type == "CollectionFolder" {
-                if let parentId = library.id as String? {
-                    let latest = try await client.latestItems(parentId: parentId, limit: 10)
+            try await withThrowingTaskGroup(of: (String, [BaseItemDto]).self) { group in
+                for library in librariesResult {
+                    let libraryId = library.id
+                    group.addTask {
+                        let latest = try await self.client.latestItems(parentId: libraryId, limit: 10)
+                        return (libraryId, latest)
+                    }
+                }
+                for try await (libraryId, latest) in group {
                     if !latest.isEmpty {
-                        latestPerLibrary[library.id] = latest
+                        latestPerLibrary[libraryId] = latest
                     }
                 }
             }

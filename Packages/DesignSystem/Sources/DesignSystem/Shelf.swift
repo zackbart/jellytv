@@ -7,6 +7,7 @@ public struct Shelf<Item: Identifiable & Sendable>: View {
     let itemTitle: (Item) -> String
     let imageURL: (Item) -> URL?
     let onItemTap: (Item) -> Void
+    private var focusedValue: ((Item) -> BaseItemDto?)?
 
     public init(
         title: String,
@@ -22,6 +23,12 @@ public struct Shelf<Item: Identifiable & Sendable>: View {
         self.onItemTap = onItemTap
     }
 
+    public func focusedValue(_ provider: @escaping (Item) -> BaseItemDto?) -> Self {
+        var copy = self
+        copy.focusedValue = provider
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title)
@@ -32,12 +39,23 @@ public struct Shelf<Item: Identifiable & Sendable>: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 40) {
                     ForEach(items) { item in
-                        PosterCard(
-                            item: item,
-                            title: itemTitle(item),
-                            imageURL: imageURL(item)
-                        ) {
-                            onItemTap(item)
+                        if let provider = focusedValue {
+                            PosterCard(
+                                item: item,
+                                title: itemTitle(item),
+                                imageURL: imageURL(item)
+                            ) {
+                                onItemTap(item)
+                            }
+                            .focusedValue(provider)
+                        } else {
+                            PosterCard(
+                                item: item,
+                                title: itemTitle(item),
+                                imageURL: imageURL(item)
+                            ) {
+                                onItemTap(item)
+                            }
                         }
                     }
                 }

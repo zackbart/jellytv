@@ -4,6 +4,7 @@ import DesignSystem
 
 public struct HomeView: View {
     @Bindable var model: HomeModel
+    @FocusedValue(\.focusedHomeItem) private var focusedItem
 
     public init(model: HomeModel) {
         self.model = model
@@ -28,9 +29,40 @@ public struct HomeView: View {
 
     @ViewBuilder
     private func homeContent(_ content: HomeContent) -> some View {
+        let displayedHeroItem = focusedItem ?? content.heroItem
+        if content.isEmpty {
+            emptyState(libraryCount: content.libraries.count)
+        } else {
+            loadedScroll(content: content, displayedHeroItem: displayedHeroItem)
+        }
+    }
+
+    private func emptyState(libraryCount: Int) -> some View {
+        VStack(spacing: 24) {
+            Image(systemName: "film.stack")
+                .font(.system(size: 80))
+                .foregroundStyle(.secondary)
+            Text("Nothing to show yet")
+                .font(.title)
+            Text(libraryCount == 0
+                 ? "Your server has no libraries."
+                 : "Your libraries are empty, or have no recently added items.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Reload") {
+                Task { await model.load() }
+            }
+        }
+        .padding(60)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func loadedScroll(content: HomeContent, displayedHeroItem: BaseItemDto?) -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: 60) {
-                if let heroItem = content.heroItem {
+                if let heroItem = displayedHeroItem {
                     HeroSection(
                         item: heroItem,
                         serverURL: content.serverURL,
@@ -48,6 +80,7 @@ public struct HomeView: View {
                     ) { item in
                         print("Resume: \(item.name)")
                     }
+                    .focusedValue { $0 }
                 }
 
                 if !content.nextUp.isEmpty {
@@ -59,6 +92,7 @@ public struct HomeView: View {
                     ) { item in
                         print("Next Up: \(item.name)")
                     }
+                    .focusedValue { $0 }
                 }
 
                 ForEach(content.libraries, id: \.id) { library in
@@ -71,6 +105,7 @@ public struct HomeView: View {
                         ) { item in
                             print("Latest: \(item.name)")
                         }
+                        .focusedValue { $0 }
                     }
                 }
             }
@@ -106,5 +141,9 @@ extension HomeContent {
             return first
         }
         return nil
+    }
+
+    var isEmpty: Bool {
+        resumeItems.isEmpty && nextUp.isEmpty && latestPerLibrary.values.allSatisfy(\.isEmpty)
     }
 }
