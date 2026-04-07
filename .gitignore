@@ -50,6 +50,9 @@ fastlane/test_output
 .env.local
 *.local
 
+# Motif workflow state
+.motif/
+
 # Editor
 .vscode/
 .idea/

@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		D8EF31792F8478A60082D493 /* Jelly TV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Jelly TV.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D8EF31792F8478A60082D493 /* JellyTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JellyTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D8EF317B2F8478A60082D493 /* Jelly TV */ = {
+		D8EF317B2F8478A60082D493 /* JellyTV */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Jelly TV";
+			path = JellyTV;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		D8EF31702F8478A60082D493 = {
 			isa = PBXGroup;
 			children = (
-				D8EF317B2F8478A60082D493 /* Jelly TV */,
+				D8EF317B2F8478A60082D493 /* JellyTV */,
 				D8EF317A2F8478A60082D493 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		D8EF317A2F8478A60082D493 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D8EF31792F8478A60082D493 /* Jelly TV.app */,
+				D8EF31792F8478A60082D493 /* JellyTV.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D8EF31782F8478A60082D493 /* Jelly TV */ = {
+		D8EF31782F8478A60082D493 /* JellyTV */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget "Jelly TV" */;
+			buildConfigurationList = D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget JellyTV */;
 			buildPhases = (
 				D8EF31752F8478A60082D493 /* Sources */,
 				D8EF31762F8478A60082D493 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D8EF317B2F8478A60082D493 /* Jelly TV */,
+				D8EF317B2F8478A60082D493 /* JellyTV */,
 			);
-			name = "Jelly TV";
+			name = JellyTV;
 			packageProductDependencies = (
 			);
-			productName = "Jelly TV";
-			productReference = D8EF31792F8478A60082D493 /* Jelly TV.app */;
+			productName = JellyTV;
+			productReference = D8EF31792F8478A60082D493 /* JellyTV.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D8EF31742F8478A60082D493 /* Build configuration list for PBXProject "Jelly TV" */;
+			buildConfigurationList = D8EF31742F8478A60082D493 /* Build configuration list for PBXProject JellyTV */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D8EF31782F8478A60082D493 /* Jelly TV */,
+				D8EF31782F8478A60082D493 /* JellyTV */,
 			);
 		};
 /* End PBXProject section */
@@ -256,6 +256,7 @@
 				DEVELOPMENT_TEAM = F2J8ZU2NQJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Jelly TV";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -270,7 +271,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 3;
 			};
 			name = Debug;
@@ -285,6 +286,7 @@
 				DEVELOPMENT_TEAM = F2J8ZU2NQJ;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Jelly TV";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -299,7 +301,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 3;
 			};
 			name = Release;
@@ -307,7 +309,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D8EF31742F8478A60082D493 /* Build configuration list for PBXProject "Jelly TV" */ = {
+		D8EF31742F8478A60082D493 /* Build configuration list for PBXProject JellyTV */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8EF31822F8478A60082D493 /* Debug */,
@@ -316,7 +318,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget "Jelly TV" */ = {
+		D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget JellyTV */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8EF31852F8478A60082D493 /* Debug */,
