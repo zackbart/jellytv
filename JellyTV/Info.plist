@@ -12,6 +12,14 @@
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
+		<!-- AVFoundation/AVPlayer does NOT honor NSAllowsLocalNetworking for
+		     media loads. Without this exception, AVPlayer fails with
+		     AVFoundationErrorCode -11850 "Operation Stopped" + CFNetwork
+		     -12939 when trying to play HTTP streams from a LAN Jellyfin
+		     server. NSAllowsArbitraryLoadsForMedia is scoped specifically
+		     to AVFoundation media loading and does not affect URLSession. -->
+		<key>NSAllowsArbitraryLoadsForMedia</key>
+		<true/>
 	</dict>
 </dict>
 </plist>

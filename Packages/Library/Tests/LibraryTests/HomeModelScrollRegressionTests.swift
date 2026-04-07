@@ -167,4 +167,8 @@ private final class TestScrollRegressionClient: JellyfinClientAPI, @unchecked Se
         minStartDate: Date,
         maxStartDate: Date
     ) async throws -> [LiveTvProgram] { [] }
+
+    func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {
+        LiveStreamPlayback(playbackURL: URL(string: "http://test/stream")!, liveStreamId: nil)
+    }
 }

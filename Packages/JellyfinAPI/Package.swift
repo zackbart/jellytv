@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "JellyfinAPI",
-    platforms: [.tvOS(.v26)],
+    platforms: [.tvOS(.v26), .macOS(.v15)],
     products: [
         .library(name: "JellyfinAPI", targets: ["JellyfinAPI"]),
     ],

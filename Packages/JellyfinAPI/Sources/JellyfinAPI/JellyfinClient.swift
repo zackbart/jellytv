@@ -7,6 +7,10 @@ public actor JellyfinClient: JellyfinClientAPI {
 
     private var serverURL: URL?
     private var accessToken: String?
+    /// Lazily fetched + cached user id. Some endpoints (e.g. PlaybackInfo)
+    /// require it as a query parameter even though the auth header already
+    /// identifies the user. Cleared when access token changes.
+    private var cachedUserId: String?
 
     // MARK: - Immutable configuration
 
@@ -64,6 +68,16 @@ public actor JellyfinClient: JellyfinClientAPI {
 
     public func setAccessToken(_ token: String?) async {
         accessToken = token
+        cachedUserId = nil
+    }
+
+    /// Returns the current user id, caching it on the actor. Throws if not
+    /// signed in. Used by endpoints that require a `userId` query param.
+    private func resolveUserId() async throws -> String {
+        if let cachedUserId { return cachedUserId }
+        let user = try await currentUser()
+        cachedUserId = user.id
+        return user.id
     }
 
     // MARK: - Protocol: Endpoints
@@ -196,6 +210,130 @@ public actor JellyfinClient: JellyfinClientAPI {
         return result.items
     }
 
+    public func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {
+        JellytvLog.liveTV.info("liveTvOpenStream(channelId: \(channelId, privacy: .public))")
+        guard let token = accessToken else {
+            JellytvLog.liveTV.error("liveTvOpenStream: no access token — not signed in")
+            throw JellyfinError.unauthenticated
+        }
+        guard let serverURL else {
+            JellytvLog.liveTV.error("liveTvOpenStream: no server URL configured")
+            throw JellyfinError.notConfigured
+        }
+        let userId = try await resolveUserId()
+
+        // PlaybackInfo is the unified stream-open path that Swiftfin and the
+        // Jellyfin web client use for both VOD and live TV. Setting
+        // autoOpenLiveStream=true on a TvChannel item makes the server open
+        // the live stream as part of the call.
+        let body = try encoder.encode(PlaybackInfoBody(deviceProfile: .liveTvDefault))
+        let queryItems = [
+            URLQueryItem(name: "userId", value: userId),
+            URLQueryItem(name: "autoOpenLiveStream", value: "true"),
+            URLQueryItem(name: "maxStreamingBitrate", value: "120000000"),
+            URLQueryItem(name: "startTimeTicks", value: "0"),
+            URLQueryItem(name: "enableDirectPlay", value: "true"),
+            URLQueryItem(name: "enableDirectStream", value: "true"),
+            URLQueryItem(name: "enableTranscoding", value: "true"),
+            URLQueryItem(name: "allowVideoStreamCopy", value: "true"),
+            URLQueryItem(name: "allowAudioStreamCopy", value: "true"),
+        ]
+        let request = try buildRequest(
+            path: "/Items/\(channelId)/PlaybackInfo",
+            method: "POST",
+            queryItems: queryItems,
+            body: body
+        )
+        let response = try await send(request, as: LiveStreamResponse.self)
+        guard let source = response.primary else {
+            JellytvLog.liveTV.error("liveTvOpenStream: response had neither MediaSource nor MediaSources[0]")
+            throw JellyfinError.decoding(
+                DecodingError.dataCorrupted(
+                    .init(codingPath: [], debugDescription: "LiveStreamResponse missing MediaSource")
+                )
+            )
+        }
+        JellytvLog.liveTV.debug("liveTvOpenStream: source id=\(source.id ?? "?", privacy: .public) container=\(source.container ?? "?", privacy: .public) transcoding=\(source.transcodingUrl ?? "<none>", privacy: .public) liveStreamId=\(source.liveStreamId ?? "<none>", privacy: .public)")
+        let playbackURL = try makePlaybackURL(source: source, serverURL: serverURL, token: token)
+        JellytvLog.liveTV.info("liveTvOpenStream: resolved playback URL \(playbackURL.absoluteString, privacy: .public)")
+        return LiveStreamPlayback(playbackURL: playbackURL, liveStreamId: source.liveStreamId)
+    }
+
+    /// Build a playback URL from a `MediaSourceInfo`. Prefers the server-supplied
+    /// `transcodingUrl` (which already contains baked auth params); falls back to
+    /// constructing a direct-stream URL via `URLComponents`. NEVER uses
+    /// `appendingPathComponent` with a query-bearing string — that percent-encodes
+    /// the `?` and breaks the URL.
+    ///
+    /// For live streams, Jellyfin's `transcodingUrl` points at `/videos/{id}/stream`
+    /// (the progressive-download endpoint), which AVPlayer can't consume for live
+    /// media because there's no Content-Length and range requests fail. We rewrite
+    /// the path to `/videos/{id}/master.m3u8` (the HLS manifest endpoint) which
+    /// wraps the same transcoding session. This is what Swiftfin and the Jellyfin
+    /// web client do for live TV.
+    private func makePlaybackURL(
+        source: MediaSourceInfo,
+        serverURL: URL,
+        token: String
+    ) throws -> URL {
+        if let transcodingUrl = source.transcodingUrl {
+            // Resolve the relative URL against the server. Do NOT append api_key —
+            // Jellyfin bakes auth into transcodingUrl when it constructs it.
+            guard let resolved = URL(string: transcodingUrl, relativeTo: serverURL)?.absoluteURL else {
+                throw JellyfinError.decoding(
+                    DecodingError.dataCorrupted(
+                        .init(codingPath: [], debugDescription: "Invalid transcodingUrl: \(transcodingUrl)")
+                    )
+                )
+            }
+            // For live streams, rewrite /videos/{id}/stream → /videos/{id}/master.m3u8
+            // and clean up any empty-name query items (Jellyfin's TranscodingUrl
+            // sometimes starts with `?&` which leaves a stray empty parameter that
+            // breaks the HLS endpoint's request parser).
+            if source.liveStreamId != nil,
+               var components = URLComponents(url: resolved, resolvingAgainstBaseURL: false) {
+                if components.path.hasSuffix("/stream") {
+                    components.path = String(components.path.dropLast("/stream".count)) + "/master.m3u8"
+                }
+                if let items = components.queryItems {
+                    let cleaned = items.filter { !$0.name.isEmpty }
+                    components.queryItems = cleaned.isEmpty ? nil : cleaned
+                }
+                if let hlsURL = components.url {
+                    return hlsURL
+                }
+            }
+            return resolved
+        }
+
+        guard let id = source.id, let container = source.container else {
+            throw JellyfinError.decoding(
+                DecodingError.dataCorrupted(
+                    .init(codingPath: [], debugDescription: "MediaSource missing Id or Container for direct-stream fallback")
+                )
+            )
+        }
+
+        var components = URLComponents()
+        components.scheme = serverURL.scheme
+        components.host = serverURL.host
+        components.port = serverURL.port
+        components.path = "/Videos/\(id)/stream.\(container)"
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "MediaSourceId", value: id),
+            URLQueryItem(name: "static", value: "true"),
+            URLQueryItem(name: "api_key", value: token),
+        ]
+        if let liveStreamId = source.liveStreamId {
+            items.append(URLQueryItem(name: "LiveStreamId", value: liveStreamId))
+        }
+        components.queryItems = items
+        guard let url = components.url else {
+            throw JellyfinError.invalidServerURL
+        }
+        return url
+    }
+
     // MARK: - Private: Authorization header
 
     private func authorizationHeaderValue() -> String {
@@ -247,31 +385,44 @@ public actor JellyfinClient: JellyfinClientAPI {
     // MARK: - Private: Send helpers
 
     private func send<T: Decodable>(_ request: URLRequest, as type: T.Type = T.self) async throws -> T {
+        let method = request.httpMethod ?? "GET"
+        let path = request.url?.path ?? "<no-url>"
+        JellytvLog.api.debug("→ \(method, privacy: .public) \(path, privacy: .public)")
+
         let data: Data
         let response: URLResponse
         do {
             (data, response) = try await session.data(for: request)
         } catch let urlError as URLError {
+            JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) network error: \(urlError.localizedDescription, privacy: .public) (code: \(urlError.code.rawValue))")
             throw JellyfinError.network(urlError)
         } catch {
+            JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) unknown error: \(String(describing: error), privacy: .public)")
             throw JellyfinError.network(URLError(.unknown))
         }
 
         guard let http = response as? HTTPURLResponse else {
+            JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) bad server response (not HTTP)")
             throw JellyfinError.network(URLError(.badServerResponse))
         }
 
         switch http.statusCode {
         case 200..<300:
+            JellytvLog.api.debug("← \(http.statusCode) \(method, privacy: .public) \(path, privacy: .public) (\(data.count) bytes)")
             do {
                 return try decoder.decode(T.self, from: data)
             } catch let decodingError as DecodingError {
+                let bodySnippet = String(data: data.prefix(512), encoding: .utf8) ?? "<binary>"
+                JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) decode failed: \(String(describing: decodingError), privacy: .public)\nbody: \(bodySnippet, privacy: .public)")
                 throw JellyfinError.decoding(decodingError)
             }
         case 401:
+            JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) 401 unauthenticated")
             throw JellyfinError.unauthenticated
         default:
             let problem = try? decoder.decode(ProblemDetails.self, from: data)
+            let bodySnippet = String(data: data.prefix(512), encoding: .utf8) ?? "<binary>"
+            JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) HTTP \(http.statusCode) \(problem?.title ?? "", privacy: .public) — \(problem?.detail ?? bodySnippet, privacy: .public)")
             throw JellyfinError.http(status: http.statusCode, problem: problem)
         }
     }

@@ -51,4 +51,9 @@ public protocol JellyfinClientAPI: Sendable {
         minStartDate: Date,
         maxStartDate: Date
     ) async throws -> [LiveTvProgram]
+
+    /// POST /LiveTv/LiveStreams/Open — open a live TV stream for the given channel.
+    /// Returns a `LiveStreamPlayback` with a fully-resolved playback URL (the
+    /// access token is baked into the URL — callers should never need to add it).
+    func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback
 }

@@ -3,6 +3,7 @@ import JellyfinAPI
 
 public struct GuideView: View {
     @Bindable var model: GuideModel
+    @State var selectedChannel: LiveTvChannel?
 
     public init(model: GuideModel) {
         self.model = model
@@ -27,6 +28,12 @@ public struct GuideView: View {
         .task {
             await model.load()
         }
+        .modifier(ChannelPlayerPresentation(
+            selectedChannel: $selectedChannel,
+            openStream: { [model] ch in
+                try await model.openStream(channelId: ch.id).playbackURL
+            }
+        ))
     }
 
     // MARK: - Grid
@@ -47,8 +54,10 @@ public struct GuideView: View {
             // with their corresponding program rows.
             Color.clear.frame(height: GuideLayout.timeHeaderHeight)
             ForEach(content.channels) { channel in
-                ChannelLabel(channel: channel)
-                    .frame(height: GuideLayout.rowHeight)
+                ChannelLabel(channel: channel) { selected in
+                    selectedChannel = selected
+                }
+                .frame(height: GuideLayout.rowHeight)
             }
         }
         .frame(width: GuideLayout.channelColumnWidth)
@@ -64,10 +73,8 @@ public struct GuideView: View {
                         channel: channel,
                         programs: content.programs(for: channel.id),
                         windowStart: content.windowStart,
-                        now: content.windowStart, // refreshed by TimelineView in nowLine, but cells need a stable "now"
-                        onSelectProgram: { _ in /* Phase C: playback */ }
+                        now: content.windowStart
                     )
-                    .focusSection()
                 }
             }
             .overlay(alignment: .topLeading) {
@@ -134,25 +141,64 @@ public struct GuideView: View {
     }
 }
 
+// MARK: - Channel player presentation
+
+/// Wraps the player presentation in a platform-aware modifier so the LiveTV
+/// package compiles for both tvOS (full-screen cover) and macOS (sheet).
+private struct ChannelPlayerPresentation: ViewModifier {
+    @Binding var selectedChannel: LiveTvChannel?
+    let openStream: @Sendable (LiveTvChannel) async throws -> URL
+
+    func body(content: Content) -> some View {
+        #if os(tvOS)
+        content.fullScreenCover(item: $selectedChannel) { channel in
+            LiveTVPlayerView(
+                channel: channel,
+                openStream: openStream,
+                onDismiss: { selectedChannel = nil }
+            )
+        }
+        #else
+        content.sheet(item: $selectedChannel) { channel in
+            LiveTVPlayerView(
+                channel: channel,
+                openStream: openStream,
+                onDismiss: { selectedChannel = nil }
+            )
+        }
+        #endif
+    }
+}
+
 // MARK: - Channel label
 
 private struct ChannelLabel: View {
     let channel: LiveTvChannel
+    let onSelect: (LiveTvChannel) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let number = channel.number, !number.isEmpty {
-                Text(number)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+        Button {
+            onSelect(channel)
+        } label: {
+            VStack(alignment: .leading, spacing: 4) {
+                if let number = channel.number, !number.isEmpty {
+                    Text(number)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                Text(channel.name)
+                    .font(.headline)
+                    .lineLimit(2)
             }
-            Text(channel.name)
-                .font(.headline)
-                .lineLimit(2)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        #if os(tvOS)
+        .buttonStyle(.card)
+        #else
+        .buttonStyle(.plain)
+        #endif
     }
 }
 

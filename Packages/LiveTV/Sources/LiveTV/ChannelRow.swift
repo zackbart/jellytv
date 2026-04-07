@@ -6,7 +6,6 @@ struct ChannelRow: View {
     let programs: [LiveTvProgram]
     let windowStart: Date
     let now: Date
-    let onSelectProgram: (LiveTvProgram) -> Void
 
     var body: some View {
         LazyHStack(alignment: .top, spacing: 0) {
@@ -30,17 +29,13 @@ struct ChannelRow: View {
             ProgramCell(
                 program: program,
                 width: cellWidth,
-                isAiringNow: isAiringNow,
-                onSelect: { onSelectProgram(program) }
+                isAiringNow: isAiringNow
             )
         } else {
-            // No date info → render a small placeholder so the program is still
-            // selectable but doesn't break grid math.
             ProgramCell(
                 program: program,
                 width: GuideLayout.minimumProgramCellWidth,
-                isAiringNow: false,
-                onSelect: { onSelectProgram(program) }
+                isAiringNow: false
             )
         }
     }

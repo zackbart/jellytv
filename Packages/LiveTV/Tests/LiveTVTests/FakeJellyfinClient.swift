@@ -8,11 +8,15 @@ final class FakeJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
 
     var liveTvChannelsResult: Result<[LiveTvChannel], Error> = .success([])
     var liveTvProgramsResult: Result<[LiveTvProgram], Error> = .success([])
+    var liveTvOpenStreamResult: Result<LiveStreamPlayback, Error> = .success(
+        LiveStreamPlayback(playbackURL: URL(string: "http://test/stream")!, liveStreamId: nil)
+    )
 
     /// Captured arguments to `liveTvPrograms` for assertions.
     private(set) var lastChannelIds: [String]?
     private(set) var lastMinStartDate: Date?
     private(set) var lastMaxStartDate: Date?
+    private(set) var lastOpenStreamChannelId: String?
 
     func setServerURL(_ url: URL?) async { currentServerURL_ = url }
     func currentServerURL() async -> URL? { currentServerURL_ }
@@ -51,5 +55,10 @@ final class FakeJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
         lastMinStartDate = minStartDate
         lastMaxStartDate = maxStartDate
         return try liveTvProgramsResult.get()
+    }
+
+    func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {
+        lastOpenStreamChannelId = channelId
+        return try liveTvOpenStreamResult.get()
     }
 }

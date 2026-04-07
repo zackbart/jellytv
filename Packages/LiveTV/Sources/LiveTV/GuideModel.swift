@@ -25,9 +25,11 @@ public final class GuideModel {
     }
 
     public func load() async {
+        JellytvLog.liveTV.info("GuideModel.load() begin")
         state = .loading
 
         guard let serverURL = await client.currentServerURL() else {
+            JellytvLog.liveTV.error("GuideModel.load: not signed in (no serverURL)")
             state = .failed("Not signed in")
             return
         }
@@ -76,13 +78,23 @@ public final class GuideModel {
                 channels: channels,
                 programsByChannel: grouped
             )
+            JellytvLog.liveTV.info("GuideModel.load: loaded \(channels.count) channels, \(programs.count) programs")
             state = .loaded(content)
         } catch JellyfinError.network {
+            JellytvLog.liveTV.error("GuideModel.load: network failure")
             state = .failed("Couldn't reach the server.")
         } catch JellyfinError.unauthenticated {
+            JellytvLog.liveTV.error("GuideModel.load: unauthenticated")
             state = .failed("Session expired. Please sign in again.")
         } catch {
+            JellytvLog.liveTV.error("GuideModel.load: \(String(describing: error), privacy: .public)")
             state = .failed("Something went wrong: \(error)")
         }
+    }
+
+    /// Resolves the live playback URL for a channel. Delegates to the
+    /// underlying client so that token + URL construction stay encapsulated.
+    public func openStream(channelId: String) async throws -> LiveStreamPlayback {
+        try await client.liveTvOpenStream(channelId: channelId)
     }
 }
