@@ -16,14 +16,26 @@ final class MockJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
     var currentUserResult: Result<UserDto, Error>?
     var logoutResult: Result<Void, Error> = .success(())
 
+    // Home endpoint stubs
+    var userViewsResult: Result<[BaseItemDto], Error> = .success([])
+    var resumeItemsResult: Result<[BaseItemDto], Error> = .success([])
+    var nextUpResult: Result<[BaseItemDto], Error> = .success([])
+    var latestItemsResult: Result<[BaseItemDto], Error> = .success([])
+
     var setServerURLCalls: [URL?] = []
     var setAccessTokenCalls: [String?] = []
+    var currentServerURL: URL? = nil
     var quickConnectStatusCallCount: Int = 0
     var currentUserCallCount: Int = 0
     var logoutCallCount: Int = 0
 
     func setServerURL(_ url: URL?) async {
         setServerURLCalls.append(url)
+        currentServerURL = url
+    }
+
+    func currentServerURL() async -> URL? {
+        currentServerURL
     }
 
     func setAccessToken(_ token: String?) async {
@@ -67,5 +79,23 @@ final class MockJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
     func logout() async throws {
         logoutCallCount += 1
         try logoutResult.get()
+    }
+
+    // MARK: - Home
+
+    func userViews() async throws -> [BaseItemDto] {
+        try userViewsResult.get()
+    }
+
+    func resumeItems(limit: Int) async throws -> [BaseItemDto] {
+        try resumeItemsResult.get()
+    }
+
+    func nextUp(limit: Int) async throws -> [BaseItemDto] {
+        try nextUpResult.get()
+    }
+
+    func latestItems(parentId: String?, limit: Int) async throws -> [BaseItemDto] {
+        try latestItemsResult.get()
     }
 }

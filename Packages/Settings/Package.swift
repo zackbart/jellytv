@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Settings",
-    platforms: [.tvOS(.v26), .macOS(.v14)],
+    platforms: [.tvOS(.v26), .macOS(.v15)],
     products: [
         .library(name: "Settings", targets: ["Settings"]),
     ],
@@ -23,7 +23,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SettingsTests",
-            dependencies: ["Settings"]
+            dependencies: ["Settings", "JellyfinAPI"]
         ),
     ]
 )

@@ -9,6 +9,8 @@
 import SwiftUI
 import JellyfinAPI
 import Settings
+import Library
+import DesignSystem
 
 struct RootView: View {
     @Bindable var sessionStore: SessionStore
@@ -61,22 +63,7 @@ private struct SignedInRootView: View {
     let sessionStore: SessionStore
 
     var body: some View {
-        VStack(spacing: 60) {
-            VStack(spacing: 20) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 120))
-                    .foregroundStyle(.green)
-                Text("Signed in as \(user.name)")
-                    .font(.largeTitle)
-                Text("Phase 2 will replace this with the Home screen.")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-            }
-            Button("Sign Out") {
-                Task { await sessionStore.signOut() }
-            }
-        }
-        .padding(80)
+        HomeView(model: HomeModel(client: sessionStore.client))
     }
 }
 

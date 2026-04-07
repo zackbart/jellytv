@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Persistence",
-    platforms: [.tvOS(.v26)],
+    platforms: [.tvOS(.v26), .macOS(.v15)],
     products: [
         .library(name: "Persistence", targets: ["Persistence"]),
     ],
