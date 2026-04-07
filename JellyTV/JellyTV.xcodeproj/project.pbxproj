@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D8321AB32F8554190046BB1A /* JellyfinAPI in Frameworks */ = {isa = PBXBuildFile; productRef = D8321AB22F8554190046BB1A /* JellyfinAPI */; };
+		D8321AB62F85542C0046BB1A /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = D8321AB52F85542C0046BB1A /* DesignSystem */; };
+		D8321AB92F8554390046BB1A /* Library in Frameworks */ = {isa = PBXBuildFile; productRef = D8321AB82F8554390046BB1A /* Library */; };
+		D8321ABC2F8554460046BB1A /* Persistence in Frameworks */ = {isa = PBXBuildFile; productRef = D8321ABB2F8554460046BB1A /* Persistence */; };
+		D8321ABF2F8554530046BB1A /* Player in Frameworks */ = {isa = PBXBuildFile; productRef = D8321ABE2F8554530046BB1A /* Player */; };
+		D8321AC22F85545F0046BB1A /* Settings in Frameworks */ = {isa = PBXBuildFile; productRef = D8321AC12F85545F0046BB1A /* Settings */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		D8EF31792F8478A60082D493 /* JellyTV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JellyTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +32,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8321ABF2F8554530046BB1A /* Player in Frameworks */,
+				D8321ABC2F8554460046BB1A /* Persistence in Frameworks */,
+				D8321AB92F8554390046BB1A /* Library in Frameworks */,
+				D8321AC22F85545F0046BB1A /* Settings in Frameworks */,
+				D8321AB32F8554190046BB1A /* JellyfinAPI in Frameworks */,
+				D8321AB62F85542C0046BB1A /* DesignSystem in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -50,7 +65,7 @@
 /* Begin PBXNativeTarget section */
 		D8EF31782F8478A60082D493 /* JellyTV */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget JellyTV */;
+			buildConfigurationList = D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget "JellyTV" */;
 			buildPhases = (
 				D8EF31752F8478A60082D493 /* Sources */,
 				D8EF31762F8478A60082D493 /* Frameworks */,
@@ -65,6 +80,12 @@
 			);
 			name = JellyTV;
 			packageProductDependencies = (
+				D8321AB22F8554190046BB1A /* JellyfinAPI */,
+				D8321AB52F85542C0046BB1A /* DesignSystem */,
+				D8321AB82F8554390046BB1A /* Library */,
+				D8321ABB2F8554460046BB1A /* Persistence */,
+				D8321ABE2F8554530046BB1A /* Player */,
+				D8321AC12F85545F0046BB1A /* Settings */,
 			);
 			productName = JellyTV;
 			productReference = D8EF31792F8478A60082D493 /* JellyTV.app */;
@@ -85,7 +106,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D8EF31742F8478A60082D493 /* Build configuration list for PBXProject JellyTV */;
+			buildConfigurationList = D8EF31742F8478A60082D493 /* Build configuration list for PBXProject "JellyTV" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -94,6 +115,14 @@
 			);
 			mainGroup = D8EF31702F8478A60082D493;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D8321AB12F8554190046BB1A /* XCLocalSwiftPackageReference "../Packages/JellyfinAPI" */,
+				D8321AB42F85542C0046BB1A /* XCLocalSwiftPackageReference "../Packages/DesignSystem" */,
+				D8321AB72F8554390046BB1A /* XCLocalSwiftPackageReference "../Packages/Library" */,
+				D8321ABA2F8554460046BB1A /* XCLocalSwiftPackageReference "../Packages/Persistence" */,
+				D8321ABD2F8554530046BB1A /* XCLocalSwiftPackageReference "../Packages/Player" */,
+				D8321AC02F85545F0046BB1A /* XCLocalSwiftPackageReference "../Packages/Settings" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D8EF317A2F8478A60082D493 /* Products */;
 			projectDirPath = "";
@@ -311,7 +340,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D8EF31742F8478A60082D493 /* Build configuration list for PBXProject JellyTV */ = {
+		D8EF31742F8478A60082D493 /* Build configuration list for PBXProject "JellyTV" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8EF31822F8478A60082D493 /* Debug */,
@@ -320,7 +349,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget JellyTV */ = {
+		D8EF31842F8478A60082D493 /* Build configuration list for PBXNativeTarget "JellyTV" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D8EF31852F8478A60082D493 /* Debug */,
@@ -330,6 +359,60 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D8321AB12F8554190046BB1A /* XCLocalSwiftPackageReference "../Packages/JellyfinAPI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/JellyfinAPI;
+		};
+		D8321AB42F85542C0046BB1A /* XCLocalSwiftPackageReference "../Packages/DesignSystem" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/DesignSystem;
+		};
+		D8321AB72F8554390046BB1A /* XCLocalSwiftPackageReference "../Packages/Library" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/Library;
+		};
+		D8321ABA2F8554460046BB1A /* XCLocalSwiftPackageReference "../Packages/Persistence" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/Persistence;
+		};
+		D8321ABD2F8554530046BB1A /* XCLocalSwiftPackageReference "../Packages/Player" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/Player;
+		};
+		D8321AC02F85545F0046BB1A /* XCLocalSwiftPackageReference "../Packages/Settings" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../Packages/Settings;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D8321AB22F8554190046BB1A /* JellyfinAPI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JellyfinAPI;
+		};
+		D8321AB52F85542C0046BB1A /* DesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignSystem;
+		};
+		D8321AB82F8554390046BB1A /* Library */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Library;
+		};
+		D8321ABB2F8554460046BB1A /* Persistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Persistence;
+		};
+		D8321ABE2F8554530046BB1A /* Player */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Player;
+		};
+		D8321AC12F85545F0046BB1A /* Settings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Settings;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D8EF31712F8478A60082D493 /* Project object */;
 }
