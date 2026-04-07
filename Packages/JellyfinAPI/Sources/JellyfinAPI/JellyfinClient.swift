@@ -54,6 +54,14 @@ public actor JellyfinClient: JellyfinClientAPI {
         serverURL = url
     }
 
+    public nonisolated func currentServerURL() async -> URL? {
+        await getServerURL()
+    }
+
+    private func getServerURL() -> URL? {
+        return serverURL
+    }
+
     public func setAccessToken(_ token: String?) async {
         accessToken = token
     }
@@ -111,6 +119,41 @@ public actor JellyfinClient: JellyfinClientAPI {
     public func logout() async throws {
         let request = try buildRequest(path: "/Sessions/Logout", method: "POST")
         try await sendIgnoringResponse(request)
+    }
+
+    // MARK: - Home
+
+    public func userViews() async throws -> [BaseItemDto] {
+        let request = try buildRequest(path: "/UserViews")
+        let result = try await send(request, as: BaseItemDtoQueryResult.self)
+        return result.items
+    }
+
+    public func resumeItems(limit: Int) async throws -> [BaseItemDto] {
+        let request = try buildRequest(
+            path: "/UserItems/Resume",
+            queryItems: [URLQueryItem(name: "limit", value: String(limit))]
+        )
+        let result = try await send(request, as: BaseItemDtoQueryResult.self)
+        return result.items
+    }
+
+    public func nextUp(limit: Int) async throws -> [BaseItemDto] {
+        let request = try buildRequest(
+            path: "/Shows/NextUp",
+            queryItems: [URLQueryItem(name: "limit", value: String(limit))]
+        )
+        let result = try await send(request, as: BaseItemDtoQueryResult.self)
+        return result.items
+    }
+
+    public func latestItems(parentId: String?, limit: Int) async throws -> [BaseItemDto] {
+        var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        if let parentId = parentId {
+            queryItems.append(URLQueryItem(name: "parentId", value: parentId))
+        }
+        let request = try buildRequest(path: "/Items/Latest", queryItems: queryItems)
+        return try await send(request, as: [BaseItemDto].self)
     }
 
     // MARK: - Private: Authorization header
