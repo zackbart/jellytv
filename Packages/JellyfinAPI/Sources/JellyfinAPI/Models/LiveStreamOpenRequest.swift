@@ -61,8 +61,10 @@ public struct DeviceProfileBody: Encodable, Sendable {
     }
 
     /// Minimum-viable profile for tvOS Live TV. DirectPlay covers MPEG-TS
-    /// (HDHomeRun's native container) plus common Jellyfin formats; one HLS
-    /// transcode profile as fallback.
+    /// (HDHomeRun's native container) plus common Jellyfin formats. The HLS
+    /// transcode profile uses container=ts with BreakOnNonKeyFrames so the
+    /// server emits a real `master.m3u8` URL natively for live TV — matching
+    /// Jellyfin's web client live-TV profile.
     public static let liveTvDefault = DeviceProfileBody(
         name: "JellyTV",
         maxStreamingBitrate: 120_000_000,
@@ -77,13 +79,14 @@ public struct DeviceProfileBody: Encodable, Sendable {
         ],
         transcodingProfiles: [
             TranscodingProfileBody(
-                container: "mp4",
+                container: "ts",
                 type: "Video",
-                videoCodec: "h264",
-                audioCodec: "aac",
+                videoCodec: "h264,hevc",
+                audioCodec: "aac,mp3,ac3,eac3",
                 protocol: "hls",
                 context: "Streaming",
-                minSegments: 1
+                minSegments: 2,
+                breakOnNonKeyFrames: true
             ),
         ]
     )
@@ -118,6 +121,7 @@ public struct TranscodingProfileBody: Encodable, Sendable {
     public let `protocol`: String
     public let context: String
     public let minSegments: Int
+    public let breakOnNonKeyFrames: Bool
 
     public init(
         container: String,
@@ -126,7 +130,8 @@ public struct TranscodingProfileBody: Encodable, Sendable {
         audioCodec: String,
         protocol: String,
         context: String,
-        minSegments: Int
+        minSegments: Int,
+        breakOnNonKeyFrames: Bool
     ) {
         self.container = container
         self.type = type
@@ -135,6 +140,7 @@ public struct TranscodingProfileBody: Encodable, Sendable {
         self.`protocol` = `protocol`
         self.context = context
         self.minSegments = minSegments
+        self.breakOnNonKeyFrames = breakOnNonKeyFrames
     }
 
     enum CodingKeys: String, CodingKey {
@@ -145,5 +151,6 @@ public struct TranscodingProfileBody: Encodable, Sendable {
         case `protocol` = "Protocol"
         case context = "Context"
         case minSegments = "MinSegments"
+        case breakOnNonKeyFrames = "BreakOnNonKeyFrames"
     }
 }

@@ -89,6 +89,22 @@ struct JellyfinClientLiveTvStreamTests {
     {
         "MediaSource": {
             "Id": "src-001",
+            "TranscodingUrl": "/videos/abc/master.m3u8?&DeviceId=test&MediaSourceId=src-001&LiveStreamId=ls-001&api_key=baked",
+            "Container": "ts",
+            "LiveStreamId": "ls-001",
+            "SupportsTranscoding": true
+        }
+    }
+    """
+
+    /// Fixture for the regression test: simulates a Jellyfin server that
+    /// (despite our HLS-requesting profile) still returns a progressive
+    /// `/stream` TranscodingUrl. The client must NOT silently rewrite this —
+    /// the regression test asserts the path passes through untouched.
+    private let progressiveTranscodingResponseJSON = """
+    {
+        "MediaSource": {
+            "Id": "src-001",
             "TranscodingUrl": "/videos/abc/stream?&DeviceId=test&MediaSourceId=src-001&LiveStreamId=ls-001&api_key=baked",
             "Container": "ts",
             "LiveStreamId": "ls-001",
@@ -176,10 +192,21 @@ struct JellyfinClientLiveTvStreamTests {
         #expect(directProfiles[0]["Container"] as? String == "ts,m2ts,mkv,mp4,m4v,mov")
         let transcodingProfiles = try #require(profile["TranscodingProfiles"] as? [[String: Any]])
         #expect(!transcodingProfiles.isEmpty)
-        #expect(transcodingProfiles[0]["Protocol"] as? String == "hls")
+        let tp = transcodingProfiles[0]
+        #expect(tp["Protocol"] as? String == "hls")
+        // The HLS transcode profile must request container=ts so Jellyfin
+        // emits a real master.m3u8 URL for live TV (not the progressive
+        // /videos/{id}/stream endpoint).
+        #expect(tp["Container"] as? String == "ts")
+        #expect(tp["VideoCodec"] as? String == "h264,hevc")
+        #expect(tp["AudioCodec"] as? String == "aac,mp3,ac3,eac3")
+        #expect(tp["MinSegments"] as? Int == 2)
+        // Must serialize as JSON bool, not string — Jellyfin's OpenAPI
+        // schema declares this as boolean.
+        #expect(tp["BreakOnNonKeyFrames"] as? Bool == true)
     }
 
-    @Test func liveTvOpenStreamUsesTranscodingUrlAndRewritesLiveStreamToHls() async throws {
+    @Test func liveTvOpenStreamUsesServerSuppliedHlsTranscodingUrl() async throws {
         let client = makeStubbedClient(handler: playbackStub(playbackJSON: transcodingResponseJSON))
         await client.setServerURL(serverURL)
         await client.setAccessToken("tok-different-from-baked")
@@ -188,10 +215,10 @@ struct JellyfinClientLiveTvStreamTests {
         let urlString = playback.playbackURL.absoluteString
         // The transcoding URL is resolved against the server, so the host is preserved.
         #expect(urlString.contains("192.168.1.50:8096"))
-        // For live streams, the /stream progressive endpoint must be rewritten to
-        // /master.m3u8 (HLS) so AVPlayer can actually consume it.
+        // The server emits master.m3u8 natively now (driven by the device
+        // profile's container=ts/protocol=hls). The client must honor the
+        // server-supplied path verbatim.
         #expect(urlString.contains("/videos/abc/master.m3u8"))
-        #expect(!urlString.contains("/videos/abc/stream?"))
         // Empty leading `?&` from Jellyfin's TranscodingUrl must be stripped —
         // the cleaned URL starts the query with a real param, not `?&`.
         #expect(!urlString.contains("master.m3u8?&"))
@@ -207,6 +234,33 @@ struct JellyfinClientLiveTvStreamTests {
         // Existing query params must be preserved
         #expect(urlString.contains("MediaSourceId=src-001"))
         #expect(urlString.contains("LiveStreamId=ls-001"))
+        #expect(playback.liveStreamId == "ls-001")
+    }
+
+    /// Regression test: pins the behavior change that removed the client-side
+    /// `/stream → /master.m3u8` path rewrite. If the server (despite our
+    /// HLS-requesting profile) ever returns a progressive `/stream` URL, the
+    /// client must pass it through untouched so AVPlayer fails loudly with
+    /// the underlying problem rather than receiving a silently-broken HLS URL.
+    /// The empty-name query cleanup still runs.
+    @Test func liveTvOpenStreamPreservesProgressiveTranscodingUrl() async throws {
+        let client = makeStubbedClient(handler: playbackStub(playbackJSON: progressiveTranscodingResponseJSON))
+        await client.setServerURL(serverURL)
+        await client.setAccessToken("tok-different-from-baked")
+        let playback = try await client.liveTvOpenStream(channelId: "ch-001")
+
+        let urlString = playback.playbackURL.absoluteString
+        // Path must NOT be rewritten — server's /stream stays /stream.
+        #expect(playback.playbackURL.path == "/videos/abc/stream")
+        #expect(!urlString.contains("/master.m3u8"))
+        // Empty-name query cleanup still ran (no `?&` after stream).
+        #expect(!urlString.contains("stream?&"))
+        #expect(urlString.contains("stream?DeviceId=test"))
+        // No double api_key, no percent-encoded `?`.
+        let apiKeyCount = urlString.components(separatedBy: "api_key=").count - 1
+        #expect(apiKeyCount == 1)
+        #expect(urlString.contains("api_key=baked"))
+        #expect(!urlString.contains("%3F"))
         #expect(playback.liveStreamId == "ls-001")
     }
 

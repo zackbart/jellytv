@@ -516,12 +516,13 @@ public actor JellyfinClient: JellyfinClientAPI {
     /// `appendingPathComponent` with a query-bearing string — that percent-encodes
     /// the `?` and breaks the URL.
     ///
-    /// For live streams, Jellyfin's `transcodingUrl` points at `/videos/{id}/stream`
-    /// (the progressive-download endpoint), which AVPlayer can't consume for live
-    /// media because there's no Content-Length and range requests fail. We rewrite
-    /// the path to `/videos/{id}/master.m3u8` (the HLS manifest endpoint) which
-    /// wraps the same transcoding session. This is what Swiftfin and the Jellyfin
-    /// web client do for live TV.
+    /// For live streams, the device profile in `liveTvOpenStream` requests an HLS
+    /// transcode (`container=ts`, `protocol=hls`, `breakOnNonKeyFrames=true`), so
+    /// Jellyfin returns a `transcodingUrl` that already points at the
+    /// `/videos/{id}/master.m3u8` endpoint with the right HLS query params baked
+    /// in. We resolve that relative URL against `serverURL` and play it as-is.
+    /// The only client-side fix-up is stripping empty-name query items the server
+    /// occasionally emits (`?&...`) which break some HLS clients' query parsing.
     private func makePlaybackURL(
         source: MediaSourceInfo,
         serverURL: URL,
@@ -537,21 +538,19 @@ public actor JellyfinClient: JellyfinClientAPI {
                     )
                 )
             }
-            // For live streams, rewrite /videos/{id}/stream → /videos/{id}/master.m3u8
-            // and clean up any empty-name query items (Jellyfin's TranscodingUrl
-            // sometimes starts with `?&` which leaves a stray empty parameter that
-            // breaks the HLS endpoint's request parser).
+            // For live streams, strip empty-name query items — Jellyfin's
+            // TranscodingUrl sometimes starts with `?&` which leaves a stray
+            // empty parameter that some HLS clients reject. The path itself is
+            // honored verbatim (no rewrites — the device profile drove the server
+            // to emit a real master.m3u8 URL).
             if source.liveStreamId != nil,
                var components = URLComponents(url: resolved, resolvingAgainstBaseURL: false) {
-                if components.path.hasSuffix("/stream") {
-                    components.path = String(components.path.dropLast("/stream".count)) + "/master.m3u8"
-                }
                 if let items = components.queryItems {
                     let cleaned = items.filter { !$0.name.isEmpty }
                     components.queryItems = cleaned.isEmpty ? nil : cleaned
                 }
-                if let hlsURL = components.url {
-                    return hlsURL
+                if let cleanedURL = components.url {
+                    return cleanedURL
                 }
             }
             return resolved
