@@ -44,6 +44,10 @@ struct GuideGridView: View {
                     onTap: { onWatchChannel(channel) }
                 )
                 .frame(height: GuideLayout.rowHeight)
+                // Inset the cell so .buttonStyle(.card)'s focus scale (~1.1×)
+                // stays inside the column instead of overflowing into the
+                // program grid on the right.
+                .padding(.horizontal, 12)
             }
         }
         .frame(width: GuideLayout.channelColumnWidth)
@@ -299,7 +303,7 @@ private struct FocusableProgramCell: View {
                     Text(program.name)
                         .font(.headline)
                         .lineLimit(2)
-                        .foregroundStyle(isFocused ? .primary : .primary.opacity(0.9))
+                        .foregroundStyle(.primary.opacity(isFocused ? 1.0 : 0.9))
                     if let timeRange = LiveTvFormat.timeRange(start: program.startDate, end: program.endDate) {
                         Text(timeRange)
                             .font(.caption.monospacedDigit())
