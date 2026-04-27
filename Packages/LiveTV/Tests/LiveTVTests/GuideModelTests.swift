@@ -168,6 +168,29 @@ struct GuideModelTests {
         #expect(ids == ["live", "future"])
     }
 
+    @Test func applyFilterUsesFilteredChannelEndpoint() async throws {
+        let now = fixedNow
+        let mock = FakeJellyfinClient()
+        // Default channels endpoint returns one set; the filtered version
+        // returns a different set so we can prove the model called the right
+        // method when a non-`.all` filter is applied.
+        mock.liveTvChannelsResult = .success([makeChannel(id: "default", name: "Default")])
+        mock.liveTvFilteredChannelsResult = .success([makeChannel(id: "sports", name: "ESPN")])
+        mock.liveTvProgramsResult = .success([])
+
+        let model = GuideModel(client: mock, now: { now })
+        await model.applyFilter(.sports)
+
+        guard case .loaded(let content) = model.state else {
+            Issue.record("Expected .loaded, got \(model.state)")
+            return
+        }
+        #expect(content.channels.map(\.id) == ["sports"])
+        #expect(model.categoryFilter == .sports)
+        #expect(mock.lastChannelFilters?.isSports == true)
+        #expect(mock.lastAddCurrentProgram == false)
+    }
+
     @Test func programsForUnknownChannelsAreIgnored() async throws {
         let now = fixedNow
         let mock = FakeJellyfinClient()

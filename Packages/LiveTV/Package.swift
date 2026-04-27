@@ -10,6 +10,7 @@ let package = Package(
     dependencies: [
         .package(path: "../JellyfinAPI"),
         .package(path: "../DesignSystem"),
+        .package(url: "https://github.com/kean/Nuke", from: "12.0.0"),
     ],
     targets: [
         .target(
@@ -17,6 +18,7 @@ let package = Package(
             dependencies: [
                 .product(name: "JellyfinAPI", package: "JellyfinAPI"),
                 .product(name: "DesignSystem", package: "DesignSystem"),
+                .product(name: "NukeUI", package: "Nuke"),
             ]
         ),
         .testTarget(

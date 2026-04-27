@@ -7,7 +7,12 @@ final class FakeJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
     var currentServerURL_: URL? = URL(string: "http://192.168.1.50:8096")
 
     var liveTvChannelsResult: Result<[LiveTvChannel], Error> = .success([])
+    var liveTvFilteredChannelsResult: Result<[LiveTvChannel], Error>?
     var liveTvProgramsResult: Result<[LiveTvProgram], Error> = .success([])
+    var liveTvRecommendedResult: Result<[LiveTvProgram], Error> = .success([])
+    var liveTvRecordingsResult: Result<[BaseItemDto], Error> = .success([])
+    var liveTvTimersResult: Result<[TimerInfoDto], Error> = .success([])
+    var liveTvSeriesTimersResult: Result<[SeriesTimerInfoDto], Error> = .success([])
     var liveTvOpenStreamResult: Result<LiveStreamPlayback, Error> = .success(
         LiveStreamPlayback(playbackURL: URL(string: "http://test/stream")!, liveStreamId: nil)
     )
@@ -17,6 +22,8 @@ final class FakeJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
     private(set) var lastMinStartDate: Date?
     private(set) var lastMaxStartDate: Date?
     private(set) var lastOpenStreamChannelId: String?
+    private(set) var lastChannelFilters: LiveTvChannelFilters?
+    private(set) var lastAddCurrentProgram: Bool?
 
     func setServerURL(_ url: URL?) async { currentServerURL_ = url }
     func currentServerURL() async -> URL? { currentServerURL_ }
@@ -55,6 +62,38 @@ final class FakeJellyfinClient: JellyfinClientAPI, @unchecked Sendable {
         lastMinStartDate = minStartDate
         lastMaxStartDate = maxStartDate
         return try liveTvProgramsResult.get()
+    }
+
+    func liveTvChannels(
+        filters: LiveTvChannelFilters,
+        addCurrentProgram: Bool
+    ) async throws -> [LiveTvChannel] {
+        lastChannelFilters = filters
+        lastAddCurrentProgram = addCurrentProgram
+        if let result = liveTvFilteredChannelsResult {
+            return try result.get()
+        }
+        return try liveTvChannelsResult.get()
+    }
+
+    func liveTvRecommendedPrograms(filters: LiveTvProgramFilters) async throws -> [LiveTvProgram] {
+        try liveTvRecommendedResult.get()
+    }
+
+    func liveTvRecordings(
+        isInProgress: Bool?,
+        seriesTimerId: String?,
+        limit: Int?
+    ) async throws -> [BaseItemDto] {
+        try liveTvRecordingsResult.get()
+    }
+
+    func liveTvTimers() async throws -> [TimerInfoDto] {
+        try liveTvTimersResult.get()
+    }
+
+    func liveTvSeriesTimers() async throws -> [SeriesTimerInfoDto] {
+        try liveTvSeriesTimersResult.get()
     }
 
     func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {

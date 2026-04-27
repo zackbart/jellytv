@@ -184,6 +184,54 @@ public actor JellyfinClient: JellyfinClientAPI {
         return result.items
     }
 
+    public func liveTvChannels(
+        filters: LiveTvChannelFilters,
+        addCurrentProgram: Bool
+    ) async throws -> [LiveTvChannel] {
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "enableImages", value: "true"),
+            URLQueryItem(name: "enableImageTypes", value: "Primary,Logo,Backdrop,Thumb"),
+            URLQueryItem(name: "enableUserData", value: "true"),
+            URLQueryItem(name: "addCurrentProgram", value: addCurrentProgram ? "true" : "false"),
+        ]
+        if let value = filters.sortBy {
+            queryItems.append(URLQueryItem(name: "sortBy", value: value))
+        }
+        if let value = filters.sortOrder {
+            queryItems.append(URLQueryItem(name: "sortOrder", value: value))
+        }
+        if let value = filters.isMovie {
+            queryItems.append(URLQueryItem(name: "isMovie", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSeries {
+            queryItems.append(URLQueryItem(name: "isSeries", value: value ? "true" : "false"))
+        }
+        if let value = filters.isNews {
+            queryItems.append(URLQueryItem(name: "isNews", value: value ? "true" : "false"))
+        }
+        if let value = filters.isKids {
+            queryItems.append(URLQueryItem(name: "isKids", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSports {
+            queryItems.append(URLQueryItem(name: "isSports", value: value ? "true" : "false"))
+        }
+        if let value = filters.isFavorite {
+            queryItems.append(URLQueryItem(name: "isFavorite", value: value ? "true" : "false"))
+        }
+        if let value = filters.isAiringNow {
+            queryItems.append(URLQueryItem(name: "isAiring", value: value ? "true" : "false"))
+        }
+        if let value = filters.startIndex {
+            queryItems.append(URLQueryItem(name: "startIndex", value: String(value)))
+        }
+        if let value = filters.limit {
+            queryItems.append(URLQueryItem(name: "limit", value: String(value)))
+        }
+        let request = try buildRequest(path: "/LiveTv/Channels", queryItems: queryItems)
+        let result = try await send(request, as: LiveTvChannelQueryResult.self)
+        return result.items
+    }
+
     public func liveTvPrograms(
         channelIds: [String],
         minStartDate: Date,
@@ -209,6 +257,209 @@ public actor JellyfinClient: JellyfinClientAPI {
         let result = try await send(request, as: LiveTvProgramQueryResult.self)
         return result.items
     }
+
+    public func liveTvPrograms(
+        channelIds: [String]?,
+        minStartDate: Date?,
+        maxStartDate: Date?,
+        filters: LiveTvProgramFilters
+    ) async throws -> [LiveTvProgram] {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        var queryItems: [URLQueryItem] = []
+        if let channelIds, !channelIds.isEmpty {
+            for id in channelIds {
+                queryItems.append(URLQueryItem(name: "channelIds", value: id))
+            }
+        }
+        if let minStartDate {
+            queryItems.append(URLQueryItem(name: "minStartDate", value: isoFormatter.string(from: minStartDate)))
+        }
+        if let maxStartDate {
+            queryItems.append(URLQueryItem(name: "maxStartDate", value: isoFormatter.string(from: maxStartDate)))
+        }
+        if let value = filters.isAiring {
+            queryItems.append(URLQueryItem(name: "isAiring", value: value ? "true" : "false"))
+        }
+        if let value = filters.hasAired {
+            queryItems.append(URLQueryItem(name: "hasAired", value: value ? "true" : "false"))
+        }
+        if let value = filters.isMovie {
+            queryItems.append(URLQueryItem(name: "isMovie", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSeries {
+            queryItems.append(URLQueryItem(name: "isSeries", value: value ? "true" : "false"))
+        }
+        if let value = filters.isNews {
+            queryItems.append(URLQueryItem(name: "isNews", value: value ? "true" : "false"))
+        }
+        if let value = filters.isKids {
+            queryItems.append(URLQueryItem(name: "isKids", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSports {
+            queryItems.append(URLQueryItem(name: "isSports", value: value ? "true" : "false"))
+        }
+        if let genres = filters.genres, !genres.isEmpty {
+            queryItems.append(URLQueryItem(name: "genres", value: genres.joined(separator: "|")))
+        }
+        if let sortBy = filters.sortBy, !sortBy.isEmpty {
+            queryItems.append(URLQueryItem(name: "sortBy", value: sortBy.joined(separator: ",")))
+        } else {
+            queryItems.append(URLQueryItem(name: "sortBy", value: "StartDate"))
+        }
+        if let sortOrder = filters.sortOrder {
+            queryItems.append(URLQueryItem(name: "sortOrder", value: sortOrder))
+        } else {
+            queryItems.append(URLQueryItem(name: "sortOrder", value: "Ascending"))
+        }
+        queryItems.append(URLQueryItem(name: "enableImages", value: "true"))
+        queryItems.append(URLQueryItem(name: "enableImageTypes", value: "Primary,Thumb,Backdrop"))
+        queryItems.append(URLQueryItem(name: "fields", value: "Overview,Genres"))
+        queryItems.append(URLQueryItem(name: "enableTotalRecordCount", value: "false"))
+        if let limit = filters.limit {
+            queryItems.append(URLQueryItem(name: "limit", value: String(limit)))
+        } else {
+            queryItems.append(URLQueryItem(name: "limit", value: "500"))
+        }
+        let request = try buildRequest(path: "/LiveTv/Programs", queryItems: queryItems)
+        let result = try await send(request, as: LiveTvProgramQueryResult.self)
+        return result.items
+    }
+
+    public func liveTvRecommendedPrograms(
+        filters: LiveTvProgramFilters
+    ) async throws -> [LiveTvProgram] {
+        var queryItems: [URLQueryItem] = []
+        if let value = filters.isAiring {
+            queryItems.append(URLQueryItem(name: "isAiring", value: value ? "true" : "false"))
+        }
+        if let value = filters.hasAired {
+            queryItems.append(URLQueryItem(name: "hasAired", value: value ? "true" : "false"))
+        }
+        if let value = filters.isMovie {
+            queryItems.append(URLQueryItem(name: "isMovie", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSeries {
+            queryItems.append(URLQueryItem(name: "isSeries", value: value ? "true" : "false"))
+        }
+        if let value = filters.isNews {
+            queryItems.append(URLQueryItem(name: "isNews", value: value ? "true" : "false"))
+        }
+        if let value = filters.isKids {
+            queryItems.append(URLQueryItem(name: "isKids", value: value ? "true" : "false"))
+        }
+        if let value = filters.isSports {
+            queryItems.append(URLQueryItem(name: "isSports", value: value ? "true" : "false"))
+        }
+        if let genres = filters.genres, !genres.isEmpty {
+            queryItems.append(URLQueryItem(name: "genres", value: genres.joined(separator: "|")))
+        }
+        if let limit = filters.limit {
+            queryItems.append(URLQueryItem(name: "limit", value: String(limit)))
+        } else {
+            queryItems.append(URLQueryItem(name: "limit", value: "30"))
+        }
+        queryItems.append(URLQueryItem(name: "enableImages", value: "true"))
+        queryItems.append(URLQueryItem(name: "enableImageTypes", value: "Primary,Thumb,Backdrop"))
+        queryItems.append(URLQueryItem(name: "fields", value: "Overview,Genres"))
+        queryItems.append(URLQueryItem(name: "enableTotalRecordCount", value: "false"))
+        let request = try buildRequest(path: "/LiveTv/Programs/Recommended", queryItems: queryItems)
+        let result = try await send(request, as: LiveTvProgramQueryResult.self)
+        return result.items
+    }
+
+    public func liveTvProgram(programId: String) async throws -> LiveTvProgram {
+        let request = try buildRequest(path: "/LiveTv/Programs/\(programId)")
+        return try await send(request, as: LiveTvProgram.self)
+    }
+
+    // MARK: - Recordings
+
+    public func liveTvRecordings(
+        isInProgress: Bool?,
+        seriesTimerId: String?,
+        limit: Int?
+    ) async throws -> [BaseItemDto] {
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "enableImages", value: "true"),
+            URLQueryItem(name: "enableImageTypes", value: "Primary,Thumb,Backdrop"),
+            URLQueryItem(name: "enableTotalRecordCount", value: "false"),
+            URLQueryItem(name: "fields", value: "Overview,Genres,ChannelInfo"),
+        ]
+        if let isInProgress {
+            queryItems.append(URLQueryItem(name: "isInProgress", value: isInProgress ? "true" : "false"))
+        }
+        if let seriesTimerId {
+            queryItems.append(URLQueryItem(name: "seriesTimerId", value: seriesTimerId))
+        }
+        if let limit {
+            queryItems.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        let request = try buildRequest(path: "/LiveTv/Recordings", queryItems: queryItems)
+        let result = try await send(request, as: BaseItemDtoQueryResult.self)
+        return result.items
+    }
+
+    public func deleteLiveTvRecording(recordingId: String) async throws {
+        let request = try buildRequest(path: "/LiveTv/Recordings/\(recordingId)", method: "DELETE")
+        try await sendIgnoringResponse(request)
+    }
+
+    // MARK: - Timers
+
+    public func liveTvTimers() async throws -> [TimerInfoDto] {
+        let request = try buildRequest(path: "/LiveTv/Timers")
+        let result = try await send(request, as: TimerInfoDtoQueryResult.self)
+        return result.items
+    }
+
+    public func liveTvSeriesTimers() async throws -> [SeriesTimerInfoDto] {
+        let request = try buildRequest(path: "/LiveTv/SeriesTimers")
+        let result = try await send(request, as: SeriesTimerInfoDtoQueryResult.self)
+        return result.items
+    }
+
+    public func liveTvTimerDefaults(programId: String?) async throws -> Data {
+        var queryItems: [URLQueryItem] = []
+        if let programId {
+            queryItems.append(URLQueryItem(name: "programId", value: programId))
+        }
+        let request = try buildRequest(
+            path: "/LiveTv/Timers/Defaults",
+            queryItems: queryItems.isEmpty ? nil : queryItems
+        )
+        return try await sendRaw(request)
+    }
+
+    public func createLiveTvTimer(body: Data) async throws {
+        let request = try buildRequest(path: "/LiveTv/Timers", method: "POST", body: body)
+        try await sendIgnoringResponse(request)
+    }
+
+    public func createLiveTvSeriesTimer(body: Data) async throws {
+        let request = try buildRequest(path: "/LiveTv/SeriesTimers", method: "POST", body: body)
+        try await sendIgnoringResponse(request)
+    }
+
+    public func cancelLiveTvTimer(timerId: String) async throws {
+        let request = try buildRequest(path: "/LiveTv/Timers/\(timerId)", method: "DELETE")
+        try await sendIgnoringResponse(request)
+    }
+
+    public func cancelLiveTvSeriesTimer(timerId: String) async throws {
+        let request = try buildRequest(path: "/LiveTv/SeriesTimers/\(timerId)", method: "DELETE")
+        try await sendIgnoringResponse(request)
+    }
+
+    // MARK: - Favorites
+
+    public func setFavorite(itemId: String, isFavorite: Bool) async throws {
+        let method = isFavorite ? "POST" : "DELETE"
+        let request = try buildRequest(path: "/UserFavoriteItems/\(itemId)", method: method)
+        try await sendIgnoringResponse(request)
+    }
+
+    // MARK: - Streams
 
     public func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {
         JellytvLog.liveTV.info("liveTvOpenStream(channelId: \(channelId, privacy: .public))")
@@ -423,6 +674,39 @@ public actor JellyfinClient: JellyfinClientAPI {
             let problem = try? decoder.decode(ProblemDetails.self, from: data)
             let bodySnippet = String(data: data.prefix(512), encoding: .utf8) ?? "<binary>"
             JellytvLog.api.error("✗ \(method, privacy: .public) \(path, privacy: .public) HTTP \(http.statusCode) \(problem?.title ?? "", privacy: .public) — \(problem?.detail ?? bodySnippet, privacy: .public)")
+            throw JellyfinError.http(status: http.statusCode, problem: problem)
+        }
+    }
+
+    /// Send a request and return the raw response body. Used for endpoints
+    /// (e.g. `/LiveTv/Timers/Defaults`) where the response is an arbitrary
+    /// JSON document that callers will round-trip back to a sibling endpoint.
+    private func sendRaw(_ request: URLRequest) async throws -> Data {
+        let method = request.httpMethod ?? "GET"
+        let path = request.url?.path ?? "<no-url>"
+        JellytvLog.api.debug("→ \(method, privacy: .public) \(path, privacy: .public)")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let urlError as URLError {
+            throw JellyfinError.network(urlError)
+        } catch {
+            throw JellyfinError.network(URLError(.unknown))
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw JellyfinError.network(URLError(.badServerResponse))
+        }
+
+        switch http.statusCode {
+        case 200..<300:
+            return data
+        case 401:
+            throw JellyfinError.unauthenticated
+        default:
+            let problem = try? decoder.decode(ProblemDetails.self, from: data)
             throw JellyfinError.http(status: http.statusCode, problem: problem)
         }
     }

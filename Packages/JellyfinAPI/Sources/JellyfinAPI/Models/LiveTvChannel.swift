@@ -7,6 +7,10 @@ public struct LiveTvChannel: Decodable, Sendable, Equatable, Identifiable {
     public let channelType: String?
     public let serverId: String?
     public let imageTags: [String: String]?
+    public let userData: UserItemDataDto?
+    /// The program currently airing on this channel. Server populates this
+    /// when `addCurrentProgram=true` is sent on `/LiveTv/Channels`.
+    public let currentProgram: LiveTvProgram?
 
     public init(
         id: String,
@@ -14,7 +18,9 @@ public struct LiveTvChannel: Decodable, Sendable, Equatable, Identifiable {
         number: String? = nil,
         channelType: String? = nil,
         serverId: String? = nil,
-        imageTags: [String: String]? = nil
+        imageTags: [String: String]? = nil,
+        userData: UserItemDataDto? = nil,
+        currentProgram: LiveTvProgram? = nil
     ) {
         self.id = id
         self.name = name
@@ -22,7 +28,15 @@ public struct LiveTvChannel: Decodable, Sendable, Equatable, Identifiable {
         self.channelType = channelType
         self.serverId = serverId
         self.imageTags = imageTags
+        self.userData = userData
+        self.currentProgram = currentProgram
     }
+
+    /// Convenience: tag for the channel's primary image, used to build the
+    /// channel logo URL.
+    public var primaryImageTag: String? { imageTags?["Primary"] }
+
+    public var isFavorite: Bool { userData?.isFavorite ?? false }
 
     enum CodingKeys: String, CodingKey {
         case id = "Id"
@@ -31,6 +45,8 @@ public struct LiveTvChannel: Decodable, Sendable, Equatable, Identifiable {
         case channelType = "ChannelType"
         case serverId = "ServerId"
         case imageTags = "ImageTags"
+        case userData = "UserData"
+        case currentProgram = "CurrentProgram"
     }
 }
 

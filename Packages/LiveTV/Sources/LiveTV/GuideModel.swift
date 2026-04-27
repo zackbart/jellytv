@@ -2,6 +2,52 @@ import Foundation
 import Observation
 import JellyfinAPI
 
+/// Top-level filter on the EPG guide. Drives both the channel-list query
+/// (`isMovie` / `isSports` / etc.) and the chrome of `CategoryFilterBar`.
+public enum GuideCategory: String, CaseIterable, Sendable, Identifiable {
+    case all
+    case favorites
+    case movies
+    case sports
+    case news
+    case kids
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .all: return "All"
+        case .favorites: return "Favorites"
+        case .movies: return "Movies"
+        case .sports: return "Sports"
+        case .news: return "News"
+        case .kids: return "Kids"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .all: return "square.grid.2x2"
+        case .favorites: return "star.fill"
+        case .movies: return "film"
+        case .sports: return "sportscourt"
+        case .news: return "newspaper"
+        case .kids: return "figure.and.child.holdinghands"
+        }
+    }
+
+    public var channelFilters: LiveTvChannelFilters {
+        switch self {
+        case .all: return .default
+        case .favorites: return .favorites
+        case .movies: return .movies
+        case .sports: return .sports
+        case .news: return .news
+        case .kids: return .kids
+        }
+    }
+}
+
 @MainActor
 @Observable
 public final class GuideModel {
@@ -12,6 +58,7 @@ public final class GuideModel {
     }
 
     public private(set) var state: State = .loading
+    public private(set) var categoryFilter: GuideCategory = .all
 
     private let client: any JellyfinClientAPI
     private let now: @Sendable () -> Date
@@ -25,7 +72,16 @@ public final class GuideModel {
     }
 
     public func load() async {
-        JellytvLog.liveTV.info("GuideModel.load() begin")
+        await load(filter: categoryFilter)
+    }
+
+    public func applyFilter(_ filter: GuideCategory) async {
+        categoryFilter = filter
+        await load(filter: filter)
+    }
+
+    private func load(filter: GuideCategory) async {
+        JellytvLog.liveTV.info("GuideModel.load(filter: \(filter.rawValue, privacy: .public))")
         state = .loading
 
         guard let serverURL = await client.currentServerURL() else {
@@ -39,7 +95,15 @@ public final class GuideModel {
         let fetchStart = windowStart.addingTimeInterval(-GuideLayout.pastWindowSeconds)
 
         do {
-            let channels = try await client.liveTvChannels()
+            let channels: [LiveTvChannel]
+            if filter == .all {
+                channels = try await client.liveTvChannels()
+            } else {
+                channels = try await client.liveTvChannels(
+                    filters: filter.channelFilters,
+                    addCurrentProgram: false
+                )
+            }
             let validChannelIds = Set(channels.map(\.id))
             let programs: [LiveTvProgram]
             if channels.isEmpty {
@@ -52,11 +116,6 @@ public final class GuideModel {
                 )
             }
 
-            // Group programs by channel, dropping any whose channelId isn't in
-            // the channel list (defensive — server shouldn't return them) and
-            // any whose endDate is at or before the visible window start
-            // (program already finished). Programs missing dates are kept under
-            // their channel — the view will skip them.
             var grouped: [String: [LiveTvProgram]] = [:]
             for program in programs {
                 guard let channelId = program.channelId,
@@ -64,7 +123,6 @@ public final class GuideModel {
                 if let endDate = program.endDate, endDate <= windowStart { continue }
                 grouped[channelId, default: []].append(program)
             }
-            // Sort each channel's programs by startDate ascending.
             for (channelId, list) in grouped {
                 grouped[channelId] = list.sorted { lhs, rhs in
                     (lhs.startDate ?? .distantPast) < (rhs.startDate ?? .distantPast)

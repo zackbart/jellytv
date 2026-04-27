@@ -53,8 +53,12 @@ public extension BaseItemDto {
             tag = imageTags?["Primary"]
         case .backdrop:
             tag = backdropImageTags?.first
-        case .thumb, .logo, .art:
-            tag = nil
+        case .thumb:
+            tag = imageTags?["Thumb"]
+        case .logo:
+            tag = imageTags?["Logo"]
+        case .art:
+            tag = imageTags?["Art"]
         }
         guard let tag = tag else { return nil }
         return JellyfinImage.url(
@@ -64,5 +68,90 @@ public extension BaseItemDto {
             tag: tag,
             maxWidth: maxWidth
         )
+    }
+}
+
+public extension LiveTvChannel {
+    /// Channel logo URL. Falls back through Logo → Primary → Thumb tags so we
+    /// surface whatever image the tuner / listings provider supplied.
+    func logoURL(serverURL: URL, maxWidth: Int? = 320) -> URL? {
+        if let tag = imageTags?["Logo"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .logo,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        if let tag = imageTags?["Primary"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .primary,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        if let tag = imageTags?["Thumb"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .thumb,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        return nil
+    }
+}
+
+public extension LiveTvProgram {
+    /// Backdrop / thumbnail URL for a program. Prefers `Thumb` (typical
+    /// landscape EPG art), falls back to `Primary`, then to the channel's
+    /// Primary tag (Jellyfin populates `ChannelPrimaryImageTag` on programs
+    /// when the program itself has no art).
+    func tileImageURL(serverURL: URL, maxWidth: Int? = 600) -> URL? {
+        if let tag = imageTags?["Thumb"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .thumb,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        if let tag = imageTags?["Primary"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .primary,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        if let channelId, let tag = channelPrimaryImageTag {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: channelId,
+                type: .primary,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        return nil
+    }
+
+    func backdropURL(serverURL: URL, maxWidth: Int? = 1920) -> URL? {
+        if let tag = imageTags?["Backdrop"] {
+            return JellyfinImage.url(
+                serverURL: serverURL,
+                itemId: id,
+                type: .backdrop,
+                tag: tag,
+                maxWidth: maxWidth
+            )
+        }
+        return tileImageURL(serverURL: serverURL, maxWidth: maxWidth)
     }
 }

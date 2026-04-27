@@ -4,6 +4,9 @@ public struct LiveTvProgram: Decodable, Sendable, Equatable, Identifiable {
     public let id: String
     public let name: String
     public let channelId: String?
+    public let channelName: String?
+    public let channelNumber: String?
+    public let channelPrimaryImageTag: String?
     public let overview: String?
     public let startDate: Date?
     public let endDate: Date?
@@ -18,11 +21,19 @@ public struct LiveTvProgram: Decodable, Sendable, Equatable, Identifiable {
     public let episodeTitle: String?
     public let seriesName: String?
     public let productionYear: Int?
+    public let genres: [String]?
+    public let communityRating: Double?
+    public let officialRating: String?
+    public let imageTags: [String: String]?
+    public let runTimeTicks: Int64?
 
     public init(
         id: String,
         name: String,
         channelId: String? = nil,
+        channelName: String? = nil,
+        channelNumber: String? = nil,
+        channelPrimaryImageTag: String? = nil,
         overview: String? = nil,
         startDate: Date? = nil,
         endDate: Date? = nil,
@@ -36,11 +47,19 @@ public struct LiveTvProgram: Decodable, Sendable, Equatable, Identifiable {
         isPremiere: Bool? = nil,
         episodeTitle: String? = nil,
         seriesName: String? = nil,
-        productionYear: Int? = nil
+        productionYear: Int? = nil,
+        genres: [String]? = nil,
+        communityRating: Double? = nil,
+        officialRating: String? = nil,
+        imageTags: [String: String]? = nil,
+        runTimeTicks: Int64? = nil
     ) {
         self.id = id
         self.name = name
         self.channelId = channelId
+        self.channelName = channelName
+        self.channelNumber = channelNumber
+        self.channelPrimaryImageTag = channelPrimaryImageTag
         self.overview = overview
         self.startDate = startDate
         self.endDate = endDate
@@ -55,12 +74,23 @@ public struct LiveTvProgram: Decodable, Sendable, Equatable, Identifiable {
         self.episodeTitle = episodeTitle
         self.seriesName = seriesName
         self.productionYear = productionYear
+        self.genres = genres
+        self.communityRating = communityRating
+        self.officialRating = officialRating
+        self.imageTags = imageTags
+        self.runTimeTicks = runTimeTicks
     }
+
+    public var primaryImageTag: String? { imageTags?["Primary"] }
+    public var thumbImageTag: String? { imageTags?["Thumb"] }
 
     enum CodingKeys: String, CodingKey {
         case id = "Id"
         case name = "Name"
         case channelId = "ChannelId"
+        case channelName = "ChannelName"
+        case channelNumber = "ChannelNumber"
+        case channelPrimaryImageTag = "ChannelPrimaryImageTag"
         case overview = "Overview"
         case startDate = "StartDate"
         case endDate = "EndDate"
@@ -75,6 +105,11 @@ public struct LiveTvProgram: Decodable, Sendable, Equatable, Identifiable {
         case episodeTitle = "EpisodeTitle"
         case seriesName = "SeriesName"
         case productionYear = "ProductionYear"
+        case genres = "Genres"
+        case communityRating = "CommunityRating"
+        case officialRating = "OfficialRating"
+        case imageTags = "ImageTags"
+        case runTimeTicks = "RunTimeTicks"
     }
 }
 
