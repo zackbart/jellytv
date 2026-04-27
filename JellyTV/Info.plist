@@ -2,6 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- We only use standard TLS (URLSession + AVFoundation HLS over HTTPS).
+	     Standard encryption is exempt under the EAR; declaring this here means
+	     TestFlight won't prompt for encryption-export compliance every build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>JellyTV needs access to your local network to connect to your Jellyfin media server.</string>
 	<key>NSBonjourServices</key>
