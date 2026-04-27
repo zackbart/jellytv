@@ -200,7 +200,11 @@ struct JellyfinClientLiveTvStreamTests {
         #expect(tp["Container"] as? String == "ts")
         #expect(tp["VideoCodec"] as? String == "h264,hevc")
         #expect(tp["AudioCodec"] as? String == "aac,mp3,ac3,eac3")
-        #expect(tp["MinSegments"] as? Int == 2)
+        // MinSegments=1 (was 2 in Phase C) lets AVPlayer start as soon as
+        // the first 10s segment is buffered, halving channel-change latency.
+        // Network resilience comes from the player's auto-retry + reconnect
+        // paths, not from a thicker initial buffer.
+        #expect(tp["MinSegments"] as? Int == 1)
         // Must serialize as JSON bool, not string — Jellyfin's OpenAPI
         // schema declares this as boolean.
         #expect(tp["BreakOnNonKeyFrames"] as? Bool == true)
@@ -324,5 +328,43 @@ struct JellyfinClientLiveTvStreamTests {
         } catch {
             Issue.record("Wrong error thrown: \(error)")
         }
+    }
+
+    /// Phase D: when forceTranscoding=true, enableDirectPlay flips to "false"
+    /// and enableDirectStream also flips. Used by the player as a DirectPlay
+    /// fallback when AVPlayer can't consume the direct-stream URL for live media.
+    @Test func liveTvOpenStreamWithForceTranscodingDisablesDirectPlay() async throws {
+        var capturedURL: URL?
+        let client = makeStubbedClient(handler: playbackStub(playbackJSON: transcodingResponseJSON) { req in
+            capturedURL = req.url
+        })
+        await client.setServerURL(serverURL)
+        await client.setAccessToken("tok-test")
+        _ = try await client.liveTvOpenStream(channelId: "ch-fallback", forceTranscoding: true)
+
+        let url = try #require(capturedURL)
+        let query = url.query ?? ""
+        #expect(query.contains("enableDirectPlay=false"))
+        #expect(query.contains("enableDirectStream=false"))
+        #expect(query.contains("enableTranscoding=true"))
+    }
+
+    /// Phase D: liveTvCloseStream POSTs /LiveStreams/Close?liveStreamId=… so
+    /// Jellyfin can kill the transcoder session immediately on player dismiss.
+    @Test func liveTvCloseStreamSendsLiveStreamIdQueryParam() async throws {
+        var capturedRequest: URLRequest?
+        let client = makeStubbedClient { request in
+            capturedRequest = request
+            return self.ok("", url: request.url!)
+        }
+        await client.setServerURL(serverURL)
+        await client.setAccessToken("tok-test")
+        try await client.liveTvCloseStream(liveStreamId: "ls-zzz")
+
+        let req = try #require(capturedRequest)
+        #expect(req.httpMethod == "POST")
+        #expect(req.url?.path == "/LiveStreams/Close")
+        let query = req.url?.query ?? ""
+        #expect(query.contains("liveStreamId=ls-zzz"))
     }
 }

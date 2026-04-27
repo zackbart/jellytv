@@ -85,7 +85,7 @@ public struct DeviceProfileBody: Encodable, Sendable {
                 audioCodec: "aac,mp3,ac3,eac3",
                 protocol: "hls",
                 context: "Streaming",
-                minSegments: 2,
+                minSegments: 1,
                 breakOnNonKeyFrames: true
             ),
         ]

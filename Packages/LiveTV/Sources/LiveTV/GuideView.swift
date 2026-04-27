@@ -15,15 +15,18 @@ public struct GuideView: View {
     @Bindable var model: GuideModel
     let onWatchChannel: (LiveTvChannel) -> Void
     let onSelectProgram: (LiveTvProgram) -> Void
+    @Binding var lastWatchedChannelId: String?
 
     public init(
         model: GuideModel,
         onWatchChannel: @escaping (LiveTvChannel) -> Void = { _ in },
-        onSelectProgram: @escaping (LiveTvProgram) -> Void = { _ in }
+        onSelectProgram: @escaping (LiveTvProgram) -> Void = { _ in },
+        lastWatchedChannelId: Binding<String?> = .constant(nil)
     ) {
         self.model = model
         self.onWatchChannel = onWatchChannel
         self.onSelectProgram = onSelectProgram
+        self._lastWatchedChannelId = lastWatchedChannelId
     }
 
     public var body: some View {
@@ -59,7 +62,8 @@ public struct GuideView: View {
                 GuideGridView(
                     content: snapshot,
                     onWatchChannel: onWatchChannel,
-                    onSelectProgram: onSelectProgram
+                    onSelectProgram: onSelectProgram,
+                    lastWatchedChannelId: $lastWatchedChannelId
                 )
             }
         case .failed(let message):

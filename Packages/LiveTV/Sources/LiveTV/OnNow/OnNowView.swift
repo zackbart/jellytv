@@ -41,6 +41,7 @@ public struct OnNowView: View {
                 failedView(message)
             }
         }
+        .background(LiveTVTheme.background)
         .task {
             if case .loading = model.state {
                 await model.load()

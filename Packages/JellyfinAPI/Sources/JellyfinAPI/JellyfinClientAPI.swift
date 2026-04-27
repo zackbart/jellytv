@@ -122,6 +122,14 @@ public protocol JellyfinClientAPI: Sendable {
     func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback
 }
 
+// MARK: - Live TV stream extensions
+//
+// These methods are intentionally added in the default-implementation extension
+// rather than the protocol body so existing explicit conformers (FakeJellyfinClient,
+// MockJellyfinClient) continue to compile without per-conformer stubs. Conformers
+// that need real behavior (the actor `JellyfinClient`) override; everything else
+// gets a sensible default.
+
 // Default forwarding so existing conformers (tests, mocks) keep compiling
 // after the protocol grew. New conformers should override every method.
 public extension JellyfinClientAPI {
@@ -176,4 +184,20 @@ public extension JellyfinClientAPI {
     func cancelLiveTvSeriesTimer(timerId: String) async throws {}
 
     func setFavorite(itemId: String, isFavorite: Bool) async throws {}
+
+    /// Open a live stream, optionally forcing the server to transcode (skipping
+    /// any DirectPlay path). Used by the player as a fallback when DirectPlay
+    /// produces a URL AVPlayer can't consume for live media.
+    /// Default impl ignores the flag and forwards to `liveTvOpenStream(channelId:)`.
+    func liveTvOpenStream(
+        channelId: String,
+        forceTranscoding: Bool
+    ) async throws -> LiveStreamPlayback {
+        try await liveTvOpenStream(channelId: channelId)
+    }
+
+    /// POST /LiveStreams/Close?liveStreamId=… — best-effort tell the server to
+    /// kill the transcoder session. Saves server CPU + frees HDHomeRun tuners
+    /// for fast channel-switching. Default impl is a no-op so mocks compile.
+    func liveTvCloseStream(liveStreamId: String) async throws {}
 }

@@ -3,6 +3,11 @@ import NukeUI
 import JellyfinAPI
 import DesignSystem
 
+// Phase D: bouncy spring used for focus animations across the guide. Defined
+// here so channel cells, program cells, and tab pills all share the same
+// motion personality.
+private let liveTVFocusSpring: Animation = .spring(response: 0.4, dampingFraction: 0.7)
+
 /// The actual EPG grid: sticky channel column + horizontally-scrolling time
 /// grid + a sticky "focused program" detail strip at the bottom that shows
 /// the title, time, and overview of whatever cell currently has focus.
@@ -10,19 +15,34 @@ struct GuideGridView: View {
     let content: GuideContent
     let onWatchChannel: (LiveTvChannel) -> Void
     let onSelectProgram: (LiveTvProgram) -> Void
+    @Binding var lastWatchedChannelId: String?
 
     @FocusedValue(\.focusedGuideProgram) private var focusedProgram
     @FocusedValue(\.focusedGuideChannel) private var focusedChannel
+    @FocusState private var focusedChannelId: String?
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView(.vertical, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 0) {
-                    channelColumn
-                    programArea
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 0) {
+                        channelColumn
+                        programArea
+                    }
+                }
+                .scrollClipDisabled()
+                .onChange(of: lastWatchedChannelId) { _, newId in
+                    guard let newId else { return }
+                    Task { @MainActor in
+                        // Let SwiftUI render the dismissed-to view first.
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            proxy.scrollTo(newId, anchor: .center)
+                        }
+                        focusedChannelId = newId
+                    }
                 }
             }
-            .scrollClipDisabled()
 
             FocusedProgramFooter(
                 program: focusedProgram,
@@ -30,6 +50,7 @@ struct GuideGridView: View {
                 serverURL: content.serverURL
             )
         }
+        .background(LiveTVTheme.background)
     }
 
     // MARK: - Channel column
@@ -48,6 +69,8 @@ struct GuideGridView: View {
                 // stays inside the column instead of overflowing into the
                 // program grid on the right.
                 .padding(.horizontal, 12)
+                .focused($focusedChannelId, equals: channel.id)
+                .id(channel.id)
             }
         }
         .frame(width: GuideLayout.channelColumnWidth)
@@ -82,21 +105,45 @@ struct GuideGridView: View {
     /// updates once per minute. Critical: only the line itself is inside the
     /// timeline closure — the program grid is a sibling, so timeline ticks
     /// don't rebuild program cells (which would drop tvOS focus).
+    ///
+    /// Phase D: thicker (5pt), amber→broadcast-red gradient, with a 1.2s
+    /// auto-reversing opacity pulse so the live edge feels alive.
     private func nowLine(windowStart: Date) -> some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
             let secondsSinceStart = context.date.timeIntervalSince(windowStart)
             let x = GuideLayout.offset(forSecondsSinceWindowStart: secondsSinceStart)
-            VStack(spacing: 0) {
-                Color.clear.frame(height: GuideLayout.timeHeaderHeight)
-                Rectangle()
-                    .fill(Color.red)
-                    .frame(width: 3)
-                    .frame(maxHeight: .infinity)
-                    .shadow(color: .red.opacity(0.6), radius: 8, x: 0, y: 0)
-            }
-            .offset(x: x)
-            .allowsHitTesting(false)
+            NowLineMarker()
+                .offset(x: x - 2.5)
+                .allowsHitTesting(false)
         }
+    }
+}
+
+/// Pulsing now-line marker — separated into its own view so the
+/// auto-reversing animation lives next to the layer it animates without
+/// the parent TimelineView restarting it on the periodic tick.
+private struct NowLineMarker: View {
+    @State private var pulsing: Bool = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.clear.frame(height: GuideLayout.timeHeaderHeight)
+            Rectangle()
+                .fill(LinearGradient(
+                    colors: [LiveTVTheme.accent, LiveTVTheme.live],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .frame(width: 5)
+                .frame(maxHeight: .infinity)
+                .opacity(pulsing ? 1.0 : 0.6)
+                .shadow(color: LiveTVTheme.live.opacity(0.7), radius: 12, x: 0, y: 0)
+                .animation(
+                    .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+                    value: pulsing
+                )
+        }
+        .onAppear { pulsing = true }
     }
 }
 
@@ -117,18 +164,18 @@ private struct ChannelRowHeader: View {
                 VStack(alignment: .leading, spacing: 2) {
                     if let number = channel.number, !number.isEmpty {
                         Text(number)
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                            .font(LiveTVTypography.channelNumber)
+                            .foregroundStyle(LiveTVTheme.accent)
                     }
                     Text(channel.name)
-                        .font(.headline)
+                        .font(LiveTVTypography.channelName)
                         .lineLimit(1)
-                        .foregroundStyle(isFocused ? .primary : .secondary)
+                        .foregroundStyle(isFocused ? LiveTVTheme.text : LiveTVTheme.secondaryText)
                 }
                 Spacer(minLength: 0)
                 if channel.isFavorite {
                     Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
+                        .foregroundStyle(LiveTVTheme.accent)
                         .font(.caption)
                 }
             }
@@ -136,6 +183,8 @@ private struct ChannelRowHeader: View {
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scaleEffect(isFocused ? 1.02 : 1.0)
+        .animation(liveTVFocusSpring, value: isFocused)
         #if os(tvOS)
         .buttonStyle(.card)
         #else
@@ -159,13 +208,13 @@ private struct TimeHeader: View {
                 let offset = GuideLayout.offset(
                     forSecondsSinceWindowStart: slot.timeIntervalSince(windowStart)
                 )
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(LiveTvFormat.timeFormatter.string(from: slot))
-                        .font(.subheadline.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.primary)
+                        .font(LiveTVTypography.timeLabel)
+                        .foregroundStyle(LiveTVTheme.text)
                     Rectangle()
-                        .fill(.white.opacity(0.08))
-                        .frame(width: 1, height: 8)
+                        .fill(LiveTVTheme.divider)
+                        .frame(width: 1, height: 10)
                 }
                 .offset(x: offset, y: 16)
             }
@@ -269,6 +318,8 @@ private struct FocusableProgramCell: View {
         Button(action: onSelect) {
             content
         }
+        .scaleEffect(isFocused ? 1.02 : 1.0)
+        .animation(liveTVFocusSpring, value: isFocused)
         #if os(tvOS)
         .buttonStyle(.card)
         #else
@@ -450,6 +501,8 @@ private struct FilterPill: View {
             .padding(.vertical, 10)
             .background(background, in: Capsule())
         }
+        .scaleEffect(isFocused ? 1.02 : 1.0)
+        .animation(liveTVFocusSpring, value: isFocused)
         #if os(tvOS)
         .buttonStyle(.card)
         #else
@@ -459,9 +512,9 @@ private struct FilterPill: View {
     }
 
     private var background: Color {
-        if isSelected { return .accentColor.opacity(0.7) }
-        if isFocused { return .white.opacity(0.18) }
-        return .white.opacity(0.08)
+        if isSelected { return LiveTVTheme.accent.opacity(0.7) }
+        if isFocused { return Color.white.opacity(0.18) }
+        return LiveTVTheme.surface
     }
 }
 

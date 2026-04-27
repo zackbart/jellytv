@@ -335,15 +335,16 @@ private struct ProgramDetailContainer: View {
                     model: model,
                     serverURL: serverURL,
                     onWatchChannel: { channelId in
-                        // Resolve a LiveTvChannel — the parent only needs the id
-                        // for playback, but the existing ChannelPlayerPresentation
-                        // takes a full channel, so we synthesize a minimal one
-                        // from the program's metadata.
+                        // Synthesize a LiveTvChannel from the program metadata,
+                        // and crucially attach the program itself as
+                        // `currentProgram` so the player splash + HUD render
+                        // program info instead of empty state.
                         let channel = LiveTvChannel(
                             id: channelId,
                             name: program.channelName ?? "Live TV",
                             number: program.channelNumber,
-                            imageTags: program.channelPrimaryImageTag.map { ["Primary": $0] }
+                            imageTags: program.channelPrimaryImageTag.map { ["Primary": $0] },
+                            currentProgram: program
                         )
                         onWatchChannel(channel)
                     },

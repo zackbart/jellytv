@@ -462,7 +462,19 @@ public actor JellyfinClient: JellyfinClientAPI {
     // MARK: - Streams
 
     public func liveTvOpenStream(channelId: String) async throws -> LiveStreamPlayback {
-        JellytvLog.liveTV.info("liveTvOpenStream(channelId: \(channelId, privacy: .public))")
+        try await liveTvOpenStream(channelId: channelId, forceTranscoding: false)
+    }
+
+    /// Open a live stream. When `forceTranscoding == true`, sends
+    /// `enableDirectPlay=false` so the server won't hand back a progressive
+    /// `/Videos/{id}/stream.{container}` URL — used by the player as a
+    /// DirectPlay-fallback retry when AVPlayer can't consume the direct stream
+    /// for live media.
+    public func liveTvOpenStream(
+        channelId: String,
+        forceTranscoding: Bool
+    ) async throws -> LiveStreamPlayback {
+        JellytvLog.liveTV.info("liveTvOpenStream(channelId: \(channelId, privacy: .public), forceTranscoding: \(forceTranscoding))")
         guard let token = accessToken else {
             JellytvLog.liveTV.error("liveTvOpenStream: no access token — not signed in")
             throw JellyfinError.unauthenticated
@@ -483,8 +495,8 @@ public actor JellyfinClient: JellyfinClientAPI {
             URLQueryItem(name: "autoOpenLiveStream", value: "true"),
             URLQueryItem(name: "maxStreamingBitrate", value: "120000000"),
             URLQueryItem(name: "startTimeTicks", value: "0"),
-            URLQueryItem(name: "enableDirectPlay", value: "true"),
-            URLQueryItem(name: "enableDirectStream", value: "true"),
+            URLQueryItem(name: "enableDirectPlay", value: forceTranscoding ? "false" : "true"),
+            URLQueryItem(name: "enableDirectStream", value: forceTranscoding ? "false" : "true"),
             URLQueryItem(name: "enableTranscoding", value: "true"),
             URLQueryItem(name: "allowVideoStreamCopy", value: "true"),
             URLQueryItem(name: "allowAudioStreamCopy", value: "true"),
@@ -508,6 +520,16 @@ public actor JellyfinClient: JellyfinClientAPI {
         let playbackURL = try makePlaybackURL(source: source, serverURL: serverURL, token: token)
         JellytvLog.liveTV.info("liveTvOpenStream: resolved playback URL \(playbackURL.absoluteString, privacy: .public)")
         return LiveStreamPlayback(playbackURL: playbackURL, liveStreamId: source.liveStreamId)
+    }
+
+    public func liveTvCloseStream(liveStreamId: String) async throws {
+        JellytvLog.liveTV.info("liveTvCloseStream(liveStreamId: \(liveStreamId, privacy: .public))")
+        let request = try buildRequest(
+            path: "/LiveStreams/Close",
+            method: "POST",
+            queryItems: [URLQueryItem(name: "liveStreamId", value: liveStreamId)]
+        )
+        try await sendIgnoringResponse(request)
     }
 
     /// Build a playback URL from a `MediaSourceInfo`. Prefers the server-supplied
